@@ -89,7 +89,7 @@ def get_report_impressions():
          Output: dictionary of {report ids : impressions} from /reports directory
     """
     report_impressions = {}
-    for filename in os.scandir("test"):
+    for filename in os.scandir("../data/reports"):
         name = filename.name
         if (name == ".DS_Store"):
             continue
@@ -101,8 +101,8 @@ def get_report_impressions():
         if (list(tokenized_name[-1])[-3:] != ['t','x','t']):
             continue
         print("--------------------------------------")
-        print(open("test/" + name, "r").read())
-        report = open("test/" + name, "r").readlines()
+        print(open("../data/reports" + name, "r").read())
+        report = open("../data/reports" + name, "r").readlines()
         add_to_impression = False
         impression = ""
 
@@ -112,7 +112,6 @@ def get_report_impressions():
                 # blank line
                 continue
             first_word = tokenize_line[0].strip()
-            first_word_characters = list(tokenize_line[0])
             if first_word == "END":
                 # end of impression
                 add_to_impression = False
