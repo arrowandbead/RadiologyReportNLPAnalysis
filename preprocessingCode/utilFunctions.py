@@ -1,5 +1,6 @@
 from openpyxl import load_workbook
 import os
+import pandas as pd
 
 def iterateThroughFilesInFolder(folderPath):
     return os.listdir(folderPath)
@@ -57,3 +58,40 @@ def getExtractEvaluationInformation(filePath):
             if "cancer status" not in currReportDict and "evidence of cancer" not in currReportDict:
                 patientReportList = patientReportList[:-1]
     return outPutList
+
+
+def get_report_labels():
+    """
+        Input: None
+        Output: dictionary of {report ID : evidence of cancer} from 'evaluation of reports.xlsx'
+    """
+    data = pd.read_excel("../data/evaluation of reports.xlsx")
+    report_labels = {}
+
+    # loop through each column in the excel sheet of report ids - evidence of cancer
+    for i in range(1, 21):
+        report_col = "post-MR "
+        report_col += str(i)
+        evidence_col = "evidence of cancer" 
+        if i != 1:
+            # pandas adds a ".number" to each repeated column name
+            evidence_col += "."
+            evidence_col += str(i - 1)
+        reports = data[report_col]
+        labels = data[evidence_col]
+        temp = dict(zip(reports, labels))
+        report_labels.update(temp)
+    return report_labels
+    
+def get_report_impressions():
+    """
+        Input: None
+         Output: dictionary of {report ids : impressions} from /reports directory
+    """
+    for filename in os.scandir("../data/reports"):
+        # grab fourth to last token which should pertain to report ID
+        name = filename.name
+        tokenized_name = re.split('_|-', name)
+        report_id = tokenized_name[-4]
+        report = open("../data/reports/" + name, "r").readline()
+        pass
