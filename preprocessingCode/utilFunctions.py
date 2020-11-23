@@ -88,33 +88,42 @@ def get_report_impressions():
         Input: None
          Output: dictionary of {report ids : impressions} from /reports directory
     """
-    for filename in os.scandir("reports"):
-    name = filename.name
-    if (name == ".DS_Store"):
-        continue
-    tokenized_name = re.split('_|-', name)
-    report_id = tokenized_name[-4]
-    if (list(tokenized_name[-1])[-3:] != ['t','x','t']):
-        continue
-    print("--------------------------------------")
-    print(open("reports/" + name, "r").read())
-    report = open("reports/" + name, "r").readlines()
-    add_to_impression = False
-    impression = ""
+    report_impressions = {}
+    for filename in os.scandir("test"):
+        name = filename.name
+        if (name == ".DS_Store"):
+            continue
+        # print("name of file:", name)
+        tokenized_name = re.split('_|-', name)
+        # print("tok name", tokenized_name)
+        report_id = tokenized_name[-4]
+        # print(list(tokenized_name[-1])[-3:])
+        if (list(tokenized_name[-1])[-3:] != ['t','x','t']):
+            continue
+        print("--------------------------------------")
+        print(open("test/" + name, "r").read())
+        report = open("test/" + name, "r").readlines()
+        add_to_impression = False
+        impression = ""
 
-    for line in report:
-        tokenize_line = line.split(" ")
-        first_word = tokenize_line[0].strip()
-        first_word_characters = list(tokenize_line[0])
-        if first_word == "END":
-            # end of impression
-            add_to_impression = False
-        if add_to_impression:
-            impression += line.strip() + " "
-        if first_word == "IMPRESSION" or first_word == "IMPRESSION:":
-            impression = ""
-            add_to_impression = True
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    print("Impression extracted:")
-    print(impression)
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        for line in report:
+            tokenize_line = line.split()
+            if (len(tokenize_line) == 0):
+                # blank line
+                continue
+            first_word = tokenize_line[0].strip()
+            first_word_characters = list(tokenize_line[0])
+            if first_word == "END":
+                # end of impression
+                add_to_impression = False
+            if add_to_impression:
+                impression += line.strip() + " "
+            if first_word == "IMPRESSION" or first_word == "IMPRESSION:":
+                impression = ""
+                add_to_impression = True
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print("Impression extracted:")
+        print(impression)
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        report_impressions.update({report_id:impression})
+    return report_impressions
