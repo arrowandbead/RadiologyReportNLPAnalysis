@@ -88,10 +88,33 @@ def get_report_impressions():
         Input: None
          Output: dictionary of {report ids : impressions} from /reports directory
     """
-    for filename in os.scandir("../data/reports"):
-        # grab fourth to last token which should pertain to report ID
-        name = filename.name
-        tokenized_name = re.split('_|-', name)
-        report_id = tokenized_name[-4]
-        report = open("../data/reports/" + name, "r").readline()
-        pass
+    for filename in os.scandir("reports"):
+    name = filename.name
+    if (name == ".DS_Store"):
+        continue
+    tokenized_name = re.split('_|-', name)
+    report_id = tokenized_name[-4]
+    if (list(tokenized_name[-1])[-3:] != ['t','x','t']):
+        continue
+    print("--------------------------------------")
+    print(open("reports/" + name, "r").read())
+    report = open("reports/" + name, "r").readlines()
+    add_to_impression = False
+    impression = ""
+
+    for line in report:
+        tokenize_line = line.split(" ")
+        first_word = tokenize_line[0].strip()
+        first_word_characters = list(tokenize_line[0])
+        if first_word == "END":
+            # end of impression
+            add_to_impression = False
+        if add_to_impression:
+            impression += line.strip() + " "
+        if first_word == "IMPRESSION" or first_word == "IMPRESSION:":
+            impression = ""
+            add_to_impression = True
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print("Impression extracted:")
+    print(impression)
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
