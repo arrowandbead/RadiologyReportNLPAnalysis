@@ -1,3 +1,2 @@
-data/rawData/*
-data/preprocessedData/*
+data/*
 environment/*
