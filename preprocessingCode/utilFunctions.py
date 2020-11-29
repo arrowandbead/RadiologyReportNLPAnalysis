@@ -1,5 +1,6 @@
 from openpyxl import load_workbook
 import os
+import pandas as pd
 
 def iterateThroughFilesInFolder(folderPath):
     return os.listdir(folderPath)
@@ -57,3 +58,71 @@ def getExtractEvaluationInformation(filePath):
             if "cancer status" not in currReportDict and "evidence of cancer" not in currReportDict:
                 patientReportList = patientReportList[:-1]
     return outPutList
+
+
+def get_report_labels():
+    """
+        Input: None
+        Output: dictionary of {report ID : evidence of cancer} from 'evaluation of reports.xlsx'
+    """
+    data = pd.read_excel("../data/evaluation of reports.xlsx")
+    report_labels = {}
+
+    # loop through each column in the excel sheet of report ids - evidence of cancer
+    for i in range(1, 21):
+        report_col = "post-MR "
+        report_col += str(i)
+        evidence_col = "evidence of cancer" 
+        if i != 1:
+            # pandas adds a ".number" to each repeated column name
+            evidence_col += "."
+            evidence_col += str(i - 1)
+        reports = data[report_col]
+        labels = data[evidence_col]
+        temp = dict(zip(reports, labels))
+        report_labels.update(temp)
+    return report_labels
+    
+def get_report_impressions():
+    """
+        Input: None
+         Output: dictionary of {report ids : impressions} from /reports directory
+    """
+    report_impressions = {}
+    for filename in os.scandir("../data/reports"):
+        name = filename.name
+        if (name == ".DS_Store"):
+            continue
+        # print("name of file:", name)
+        tokenized_name = re.split('_|-', name)
+        # print("tok name", tokenized_name)
+        report_id = tokenized_name[-4]
+        # print(list(tokenized_name[-1])[-3:])
+        if (list(tokenized_name[-1])[-3:] != ['t','x','t']):
+            continue
+        print("--------------------------------------")
+        print(open("../data/reports" + name, "r").read())
+        report = open("../data/reports" + name, "r").readlines()
+        add_to_impression = False
+        impression = ""
+
+        for line in report:
+            tokenize_line = line.split()
+            if (len(tokenize_line) == 0):
+                # blank line
+                continue
+            first_word = tokenize_line[0].strip()
+            if first_word == "END":
+                # end of impression
+                add_to_impression = False
+            if add_to_impression:
+                impression += line.strip() + " "
+            if first_word == "IMPRESSION" or first_word == "IMPRESSION:":
+                impression = ""
+                add_to_impression = True
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print("Impression extracted:")
+        print(impression)
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        report_impressions.update({report_id:impression})
+    return report_impressions
