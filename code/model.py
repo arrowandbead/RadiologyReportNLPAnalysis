@@ -2,17 +2,23 @@ from transformers import AutoTokenizer, TFAutoModel
 import tensorflow as tf
 import numpy as np
 
+
 class MSNR(tf.keras.Model):
-	def __init__(self, vocab_size):
-		super(MSNR, self).__init__()
-        
-        self.embeddings_tokenizer = AutoTokenizer.from_pretrained("giacomomiolo/biobert_reupload")
-
-        self.embeddings_model = TFAutoModel.from_pretrained("giacomomiolo/biobert_reupload")
-
+    def __init__(self):
+        super(MSNR, self).__init__()
+        file_name = "giacomomiolo/biobert_reupload"
+        self.embeddings_tokenizer = AutoTokenizer.from_pretrained(file_name)
+        self.embeddings_model = TFAutoModel.from_pretrained(file_name)
         self.batch_size = 10 #placeholder
         self.embedding_size = np.shape(self.get_embeddings)
         self.vocab_size = 0 # placeholder
+
+        file = open("../data/RMS/reports/55162324_1_2746160_2009-5-13.txt")
+        tokens = file.read().split()
+        for p in tokens:
+            print(p, self.embeddings_tokenizer(p))
+        exit()
+        
 
         # self.bioBert_embedding = tf.Variable(tf.random.normal(shape=[self.vocab_size, self.embedding_size], stddev=.01, dtype=tf.float32))
 
@@ -51,13 +57,15 @@ class MSNR(tf.keras.Model):
         embeddings = hidden_states[0]
 
         return embeddings
-
+        
 
 def main():
     # TODO: Return the training and testing data from get_data
     
     # TODO: Instantiate model
-    model = Model()
+
+    model = MSNR()
+
 
     # TODO: Train and test for up to 15 epochs.
     '''

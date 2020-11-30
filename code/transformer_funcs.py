@@ -100,6 +100,8 @@ class Multi_Headed(tf.keras.layers.Layer):
 		# TODO:
 		# Initialize heads
 
+		
+
 	@tf.function
 	def call(self, inputs_for_keys, inputs_for_values, inputs_for_queries):
 		"""
