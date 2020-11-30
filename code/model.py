@@ -34,7 +34,7 @@ class MSNR(tf.keras.Model):
         # Define dense layer(s)
         self.dense_layer = tf.keras.layers.Dense(self.vocab_size, activation='softmax')
     
-    def call(self, inputs):  
+    def call(self, inputs):   
         embeddings = self.get_embeddings(inputs)
 
         sentenceEmbeddings = self.encoder(embeddings)
