@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import re
 import math
+import numpy as np
 
 def iterateThroughFilesInFolder(folderPath):
     return os.listdir(folderPath)
@@ -83,6 +84,9 @@ def get_report_labels():
         labels = data[evidence_col]
         temp = dict(zip(reports, labels))
         report_labels.update(temp)
+
+    # remove reports that don't have a label
+    report_labels = remove_nan_labels(report_labels)
     return report_labels
     
 def get_report_impressions():
@@ -133,12 +137,20 @@ def get_report_impressions():
         report_impressions.update({report_id:impression})
     return report_impressions
 
-def remove_nan_labels():
-    label_dictionary = get_report_labels()
+def remove_nan_labels(label_dictionary):
     for key in label_dictionary:
         if math.isnan(key):
             del label_dictionary[key]
+    return label_dictionary
+
+d = get_report_labels()
+values = d.values()
+one_hot_labels = np.zeros((len(d), 7))
+print(one_hot_labels.shape)
+one_hot_labels = [np.arange(len(d))]
 
 
 # OPTIONAL TODO: Remove list numbers from impressions in numbered lists
 # OPTIONAL TODO: Even formatting in report ids (remove spaces, \n's, etc.)
+# TODO: Make sure impression dict in label dict == impressions dict
+# TODO: Sort label dict in the same way as impressions dict (in other words align impressions and labels)
