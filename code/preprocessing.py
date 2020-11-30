@@ -1,6 +1,8 @@
 from openpyxl import load_workbook
 import os
 import pandas as pd
+import re
+import math
 
 def iterateThroughFilesInFolder(folderPath):
     return os.listdir(folderPath)
@@ -77,7 +79,7 @@ def get_report_labels():
             # pandas adds a ".number" to each repeated column name
             evidence_col += "."
             evidence_col += str(i - 1)
-        reports = data[report_col]
+        reports = data[report_col].astype(str)
         labels = data[evidence_col]
         temp = dict(zip(reports, labels))
         report_labels.update(temp)
@@ -97,15 +99,16 @@ def get_report_impressions():
         tokenized_name = re.split('_|-', name)
         # print("tok name", tokenized_name)
         report_id = tokenized_name[-4]
+        if report_id == "6320734":
+            print(open("../data/reports/" + name, "r").read())
         # print(list(tokenized_name[-1])[-3:])
         if (list(tokenized_name[-1])[-3:] != ['t','x','t']):
             continue
-        print("--------------------------------------")
-        print(open("../data/reports" + name, "r").read())
-        report = open("../data/reports" + name, "r").readlines()
+        # print("--------------------------------------")
+        # print(open("../data/reports/" + name, "r").read())
+        report = open("../data/reports/" + name, "r").readlines()
         add_to_impression = False
         impression = ""
-
         for line in report:
             tokenize_line = line.split()
             if (len(tokenize_line) == 0):
@@ -119,10 +122,23 @@ def get_report_impressions():
                 impression += line.strip() + " "
             if first_word == "IMPRESSION" or first_word == "IMPRESSION:":
                 impression = ""
+                first_line = tokenize_line[1:]
+                for word in first_line:
+                    impression += word + " "
                 add_to_impression = True
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print("Impression extracted:")
-        print(impression)
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        # print("Impression extracted:")
+        # print(impression)
+        # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         report_impressions.update({report_id:impression})
     return report_impressions
+
+def remove_nan_labels():
+    label_dictionary = get_report_labels()
+    for key in label_dictionary:
+        if math.isnan(key):
+            del label_dictionary[key]
+
+
+# OPTIONAL TODO: Remove list numbers from impressions in numbered lists
+# OPTIONAL TODO: Even formatting in report ids (remove spaces, \n's, etc.)
