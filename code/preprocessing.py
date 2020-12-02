@@ -103,6 +103,7 @@ def get_report_impressions():
         if (name == ".DS_Store"):
             continue
         tokenized_name = re.split('_|-', name)
+        #print(tokenized_name)
         report_id = tokenized_name[-4]
         if (list(tokenized_name[-1])[-3:] != ['t','x','t']): # temporary -- will only look at .txt's
             continue

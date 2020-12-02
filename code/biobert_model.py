@@ -3,6 +3,11 @@ import tensorflow as tf
 import numpy as np
 from preprocessing import get_data
 
+# Turn off TF warnings
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+import tensorflow as tf
+
 SEQ_LEN = 128
 
 class MSNR():
