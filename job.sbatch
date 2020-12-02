@@ -2,7 +2,6 @@
 
 #SBATCH --time=04:00:00
 
-# Use 4 nodes with 48 tasks each, for 80 MPI tasks:
 #SBATCH --nodes=1
 #SBATCH --tasks-per-node=48
 #SBATCH --cpus-per-task=1
