@@ -1,4 +1,4 @@
-# from openpyxl import load_workbook
+from openpyxl import load_workbook
 import os
 import pandas as pd
 import re
@@ -161,7 +161,7 @@ def clean_dictionary_entries():
     labels_sorted_old = sorted(labels_dict) 
 
     # remove unicode characters
-    impressions_sorted_new = [unicodedata.normalize("NFKD", x) for x in impressions_sorted_old]
+    impressions_sorted_new = [unicodedata.normalize("NFKD", x) for x in impressions_sorted_old] 
     labels_sorted_new = [unicodedata.normalize("NFKD", x) for x in labels_sorted_old]
 
     # remove whitespaces to even out input
@@ -196,6 +196,9 @@ def clean_dictionary_entries():
     sorted_impressions = list(collections.OrderedDict(sorted(impressions_dict.items())).values())
     sorted_labels = list(collections.OrderedDict(sorted(labels_dict.items())).values())
 
+    # turn labels back to ints
+    sorted_labels = [int(i) for i in sorted_labels]
+
     return (sorted_impressions, sorted_labels)
 
 
@@ -224,5 +227,7 @@ def make_entries_integers(key_list):
 
 def get_data():
     impressions, labels = clean_dictionary_entries()
-    return (impressions, labels)
+    return (impressions, labels, len(impressions))
 
+
+impressions, labels, 
