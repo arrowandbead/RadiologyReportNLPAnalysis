@@ -230,4 +230,3 @@ def get_data():
     return (impressions, labels, len(impressions))
 
 
-impressions, labels, 
