@@ -1,67 +1,70 @@
-from openpyxl import load_workbook
+# from openpyxl import load_workbook
 import os
 import pandas as pd
 import re
 import math
 import numpy as np
+import collections
+import unicodedata
 
-def iterateThroughFilesInFolder(folderPath):
-    return os.listdir(folderPath)
+# def iterateThroughFilesInFolder(folderPath):
+#     return os.listdir(folderPath)
 
-def getFieldsFromXlsx(filePath, fields):
-    workbook = load_workbook(filePath)
-    sheet1 = workbook.get_sheet_by_name("clinical")
-    iter = sheet1.iter_rows()
-    row0 = [cell.value for cell in next(iter)]
-    fieldToIndexMap = {}
-    for index, thing in enumerate(row0):
-        fieldToIndexMap[thing] = index
-    outPutList = []
-    for row in iter:
-        newDict = {}
-        rowAsList = [cell.value for cell in row]
-        for thing in fields:
-            newDict[thing] = rowAsList[fieldToIndexMap[thing]]
-        outPutList.append(newDict)
-    return outPutList
+# def getFieldsFromXlsx(filePath, fields):
+#     workbook = load_workbook(filePath)
+#     sheet1 = workbook.get_sheet_by_name("clinical")
+#     iter = sheet1.iter_rows()
+#     row0 = [cell.value for cell in next(iter)]
+#     fieldToIndexMap = {}
+#     for index, thing in enumerate(row0):
+#         fieldToIndexMap[thing] = index
+#     outPutList = []
+#     for row in iter:
+#         newDict = {}
+#         rowAsList = [cell.value for cell in row]
+#         for thing in fields:
+#             newDict[thing] = rowAsList[fieldToIndexMap[thing]]
+#         outPutList.append(newDict)
+#     return outPutList
 
 
-def getExtractEvaluationInformation(filePath):
-    workbook = load_workbook(filePath)
-    sheet1 = workbook.get_sheet_by_name("sheet1")
-    iter = sheet1.iter_rows()
-    row0 = [cell.value for cell in next(iter)]
+# def getExtractEvaluationInformation(filePath):
+#     workbook = load_workbook(filePath)
+#     sheet1 = workbook.get_sheet_by_name("sheet1")
+#     iter = sheet1.iter_rows()
+#     row0 = [cell.value for cell in next(iter)]
 
-    indexToFieldMap = {}
-    for index, thing in enumerate(row0):
-        indexToFieldMap[index] = thing
-    indexToFieldMap[2] = "time"
+#     indexToFieldMap = {}
+#     for index, thing in enumerate(row0):
+#         indexToFieldMap[index] = thing
+#     indexToFieldMap[2] = "time"
 
-    outPutList = []
-    for row in iter:
-        patientReportList = []
-        outPutList.append(patientReportList)
-        rowAsList = list([cell.value for cell in row])
-        currReportDict = None
-        for index,thing in enumerate(rowAsList):
-            if(index == 0 or thing == None):
-                continue
-            if "post-MR" in indexToFieldMap[index]:
-                if currReportDict != None:
-                    if "cancer status" not in currReportDict and "evidence of cancer" not in currReportDict:
-                        patientReportList = patientReportList[:-1]
-                currReportDict = {}
-                patientReportList.append(currReportDict)
-                currReportDict["post-MR"] = str(thing).strip(" ").split(',')
-            else:
+#     outPutList = []
+#     for row in iter:
+#         patientReportList = []
+#         outPutList.append(patientReportList)
+#         rowAsList = list([cell.value for cell in row])
+#         currReportDict = None
+#         for index,thing in enumerate(rowAsList):
+#             if(index == 0 or thing == None):
+#                 continue
+#             if "post-MR" in indexToFieldMap[index]:
+#                 if currReportDict != None:
+#                     if "cancer status" not in currReportDict and "evidence of cancer" not in currReportDict:
+#                         patientReportList = patientReportList[:-1]
+#                 currReportDict = {}
+#                 patientReportList.append(currReportDict)
+#                 currReportDict["post-MR"] = str(thing).strip(" ").split(',')
+#             else:
 
-                if thing != "" and "#" not in str(thing):
-                    currReportDict[indexToFieldMap[index]] = str(thing)
-        if currReportDict != None:
-            if "cancer status" not in currReportDict and "evidence of cancer" not in currReportDict:
-                patientReportList = patientReportList[:-1]
-    return outPutList
+#                 if thing != "" and "#" not in str(thing):
+#                     currReportDict[indexToFieldMap[index]] = str(thing)
+#         if currReportDict != None:
+#             if "cancer status" not in currReportDict and "evidence of cancer" not in currReportDict:
+#                 patientReportList = patientReportList[:-1]
+#     return outPutList
 
+# OPTIONAL TODO: Remove list numbers from impressions in numbered lists
 
 def get_report_labels():
     """
@@ -81,7 +84,7 @@ def get_report_labels():
             evidence_col += "."
             evidence_col += str(i - 1)
         reports = data[report_col].astype(str)
-        labels = data[evidence_col]
+        labels = data[evidence_col].astype(float)
         temp = dict(zip(reports, labels))
         report_labels.update(temp)
 
@@ -99,14 +102,9 @@ def get_report_impressions():
         name = filename.name
         if (name == ".DS_Store"):
             continue
-        # print("name of file:", name)
         tokenized_name = re.split('_|-', name)
-        # print("tok name", tokenized_name)
         report_id = tokenized_name[-4]
-        if report_id == "6320734":
-            print(open("../data/reports/" + name, "r").read())
-        # print(list(tokenized_name[-1])[-3:])
-        if (list(tokenized_name[-1])[-3:] != ['t','x','t']):
+        if (list(tokenized_name[-1])[-3:] != ['t','x','t']): # temporary -- will only look at .txt's
             continue
         # print("--------------------------------------")
         # print(open("../data/reports/" + name, "r").read())
@@ -138,19 +136,95 @@ def get_report_impressions():
     return report_impressions
 
 def remove_nan_labels(label_dictionary):
-    for key in label_dictionary:
-        if math.isnan(key):
-            del label_dictionary[key]
+    """
+        Input: dictionary of {report id:label or evidence of cancer}
+        Output: same dictionary, with reports without labels (represented as not a number values) removed
+    """
+    reports_without_labels = []
+    for report_id in label_dictionary:
+        if math.isnan(label_dictionary[report_id]):
+            reports_without_labels.append(report_id)
+    for report_id in reports_without_labels:
+        del label_dictionary[report_id]
     return label_dictionary
 
-d = get_report_labels()
-values = d.values()
-one_hot_labels = np.zeros((len(d), 7))
-print(one_hot_labels.shape)
-one_hot_labels = [np.arange(len(d))]
+def clean_dictionary_entries():
+    """
+        Input: None
+        Output: tuple of lists (impressions, labels) for each impression and its corresponding label
+    """
+    impressions_dict = get_report_impressions()
+    labels_dict = get_report_labels()
+
+    # ensure report id keys are all in the same format, start with sorted key list
+    impressions_sorted_old = sorted(impressions_dict)
+    labels_sorted_old = sorted(labels_dict) 
+
+    # remove unicode characters
+    impressions_sorted_new = [unicodedata.normalize("NFKD", x) for x in impressions_sorted_old] 
+    labels_sorted_new = [unicodedata.normalize("NFKD", x) for x in labels_sorted_old]
+
+    # remove whitespaces to even out input
+    impressions_sorted_new = ["".join(x.split()) for x in impressions_sorted_new]
+    labels_sorted_new = ["".join(x.split()) for x in labels_sorted_new]
+
+    # make all keys integers (change ids that look like 1.0 -> 1)
+    impressions_sorted_new = make_entries_integers(impressions_sorted_new)
+    labels_sorted_new = make_entries_integers(labels_sorted_new)
+
+    # update dictionaries with formatted keys
+    for i in range(len(impressions_dict)):
+        impressions_dict[impressions_sorted_new[i]] = impressions_dict.pop(impressions_sorted_old[i])
+
+    for i in range(len(labels_dict)):
+        labels_dict[labels_sorted_new[i]] = labels_dict.pop(labels_sorted_old[i])
+
+    # find keys outside the intersection of both sets
+    to_remove_from_impressions, to_remove_from_labels = cross_check_sets(impressions_sorted_new, labels_sorted_new)
+
+    # remove reports outside the intersection of both dictionaries from each dictionary
+    for key in to_remove_from_impressions:
+        impressions_sorted_new.remove(key)
+        del impressions_dict[key]
+    
+    for key in to_remove_from_labels:
+        labels_sorted_new.remove(key)
+        del labels_dict[key]
+
+    assert(impressions_dict.keys() == labels_dict.keys())
+
+    sorted_impressions = list(collections.OrderedDict(sorted(impressions_dict.items())).values())
+    sorted_labels = list(collections.OrderedDict(sorted(labels_dict.items())).values())
+
+    # turn labels back to ints
+    sorted_labels = [int(i) for i in sorted_labels]
+
+    return (sorted_impressions, sorted_labels)
 
 
-# OPTIONAL TODO: Remove list numbers from impressions in numbered lists
-# OPTIONAL TODO: Even formatting in report ids (remove spaces, \n's, etc.)
-# TODO: Make sure impression dict in label dict == impressions dict
-# TODO: Sort label dict in the same way as impressions dict (in other words align impressions and labels)
+def cross_check_sets(impressions_set, labels_set):
+    """
+        Input: set of report_ids in the {report_ids:impressions} and {report_ids:labels} dictionaries, respectively
+        Output: dictionary of {report ID : evidence of cancer} from 'evaluation of reports.xlsx'
+    """
+    impressions_set = set(impressions_set)
+    labels_set = set(labels_set)
+    to_remove_from_impressions = [x for x in impressions_set if x not in labels_set]
+    to_remove_from_labels = [x for x in labels_set if x not in impressions_set]
+    return (to_remove_from_impressions, to_remove_from_labels)
+
+def make_entries_integers(key_list):
+    for i in range(len(key_list)):
+        report_ids = key_list[i].split(",")
+        for j in range(len(report_ids)):
+            # if number/report id is 1.0, it will change to 1
+            try:
+                report_ids[j] = str(int(float(report_ids[j])))
+            except:
+                pass
+        key_list[i] = "".join(report_ids)
+    return key_list
+
+def get_data():
+    impressions, labels = clean_dictionary_entries()
+    return (impressions, labels)
