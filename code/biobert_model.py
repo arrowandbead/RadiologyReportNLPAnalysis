@@ -87,8 +87,13 @@ class MSNR():
             Output: None
         """
         embeddings, data = self.get_biobert_embeddings()
-        outputs = self.dense_layer(embeddings)
-        model = tf.keras.Model(inputs=[self.input_ids, self.mask], outputs=outputs)
+        # outputs = self.dense_layer(embeddings)
+        X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
+        X = tf.keras.layers.BatchNormalization()(X)
+        X = tf.keras.layers.Dense(128, activation='relu')(X)
+        X = tf.keras.layers.Dropout(0.1)(X)
+        y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X) 
+        model = tf.keras.Model(inputs=[self.input_ids, self.mask], outputs=y)
         
         # freeze the BERT layer
         model.layers[2].trainable = False
