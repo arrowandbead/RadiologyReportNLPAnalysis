@@ -65,8 +65,7 @@ class MSNR():
         # create train and test sets
         train_data = dataset.take(round(len(self.impressions) * 0.8))
         test_data = dataset.skip(round(len(self.impressions) * 0.8))
-        print(len(train_data))
-        print(len(test_data))
+
         # # free space
         # del dataset
 
