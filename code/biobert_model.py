@@ -63,8 +63,8 @@ class MSNR():
         dataset = dataset.shuffle(454).batch(32)
 
         # create train and test sets
-        train_data = dataset.take(round(len(self.impressions) * 0.8))
-        test_data = dataset.skip(round(len(self.impressions) * 0.8))
+        train_data = dataset.take(round(len(dataset) * 0.8))
+        test_data = dataset.skip(round(len(dataset) * 0.8))
         # # free space
         # del dataset
 
@@ -103,7 +103,7 @@ class MSNR():
         history = model.fit(train_data, epochs=20)
         print(history)
         results = model.evaluate(test_data)
-        print(results)
+        print("results", results)
 
 
 
