@@ -19,7 +19,7 @@ class MSNR():
         self.impressions, self.labels = get_data()
 
         # Input and layers
-        self.dense_layer = tf.keras.layers.Dense(self.num_labels, activation='softmax', name='outputs')  # adjust based on number of sentiment classes
+        # self.dense_layer = tf.keras.layers.Dense(self.num_labels, activation='softmax', name='outputs')  # adjust based on number of sentiment classes
         self.input_ids = tf.keras.layers.Input(shape=(SEQ_LEN,), name='input_ids', dtype='int32')
         self.mask = tf.keras.layers.Input(shape=(SEQ_LEN,), name='attention_mask', dtype='int32')
 
@@ -63,13 +63,14 @@ class MSNR():
         dataset = dataset.shuffle(454).batch(32)
 
         # create train and test sets
-        # train_data = dataset.take(round(len(self.impressions) * 0.8))
-        # test_data = dataset.skip(round(len(self.impressions) * 0.8))
-
+        train_data = dataset.take(round(len(self.impressions) * 0.8))
+        test_data = dataset.skip(round(len(self.impressions) * 0.8))
+        print(len(train_data))
+        print(len(test_data))
         # # free space
         # del dataset
 
-        return self.biobert(self.input_ids, attention_mask=self.mask)[0], dataset
+        return self.biobert(self.input_ids, attention_mask=self.mask)[0], train_data, test_data
 
     def map_func(self, input_ids, masks, labels):
         """
@@ -86,7 +87,7 @@ class MSNR():
             Input: None
             Output: None
         """
-        embeddings, data = self.get_biobert_embeddings()
+        embeddings, train_data, test_data = self.get_biobert_embeddings()
         # outputs = self.dense_layer(embeddings)
         X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
         X = tf.keras.layers.BatchNormalization()(X)
@@ -101,8 +102,10 @@ class MSNR():
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy])
 
         # and train it
-        history = model.fit(data, epochs=20)
+        history = model.fit(train_data, epochs=20)
         print(history)
+        results = model.evaluate(test_data)
+        print(results)
     
     def get_embeddings(self, sentences):
         """
