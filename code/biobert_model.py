@@ -65,7 +65,6 @@ class MSNR():
         # create train and test sets
         train_data = dataset.take(round(len(self.impressions) * 0.8))
         test_data = dataset.skip(round(len(self.impressions) * 0.8))
-
         # # free space
         # del dataset
 
@@ -105,17 +104,6 @@ class MSNR():
         print(history)
         results = model.evaluate(test_data)
         print(results)
-    
-    def get_embeddings(self, sentences):
-        """
-            Input: Sentences in an array (e.g. sentences = ["Sentence one.",  "Sentence two."])
-            Output: sentence embeddings as array of size [1 x 768] (?)
-        """
-        batch = self.biobert_tokenizer(sentences, padding=True, truncation=True, return_tensors='tf')
-        outputs = self.biobert(batch, output_hidden_states=True)
-        hidden_states = outputs[2]
-        embeddings = hidden_states[0]
-        return embeddings
 
 
 
@@ -123,6 +111,7 @@ def main():
 
     m = MSNR()
     print(m.train_model())
+
 
 if __name__ == '__main__':
     main()
