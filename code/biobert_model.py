@@ -63,8 +63,8 @@ class MSNR():
         # shuffle and batch dataset
         dataset = dataset.shuffle(908).batch(32)
         # create train and test sets
-        train_data = dataset.take(round(len(dataset) * 0.8))
-        test_data = dataset.skip(round(len(dataset) * 0.8))
+        train_data = dataset.take(round(len(dataset) * 0.5))
+        test_data = dataset.skip(round(len(dataset) * 0.5))
         # # free space
         # del dataset
 
