@@ -63,10 +63,9 @@ class MSNR():
         # shuffle and batch dataset
         dataset = dataset.shuffle(908).batch(32)
         # create train and test sets
-        train_data = dataset.take(round(len(dataset) * 0.5))
-        test_data = dataset.skip(round(len(dataset) * 0.5))
-        print("len of train", len(train_data))
-        print("len of test", len(test_data))
+        train_data = dataset.take(round(len(dataset) * 0.8))
+        test_data = dataset.skip(round(len(dataset) * 0.2))
+
         # # free space
         # del dataset
 
@@ -90,12 +89,12 @@ class MSNR():
         embeddings, train_data, test_data = self.get_biobert_embeddings()
         print(embeddings.shape)
         # outputs = self.dense_layer(embeddings)
-        X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
+        # X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
         print(X.shape)
-        X = tf.keras.layers.BatchNormalization()(X)
-        X = tf.keras.layers.Dense(128, activation='relu')(X)
-        X = tf.keras.layers.Dropout(0.1)(X)
-        y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X) 
+        # X = tf.keras.layers.BatchNormalization()(X)
+        # X = tf.keras.layers.Dense(128, activation='relu')(X)
+        # X = tf.keras.layers.Dropout(0.1)(X)
+        y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(embeddings) 
         model = tf.keras.Model(inputs=[self.input_ids, self.mask], outputs=y)
         
         # freeze the BERT layer
