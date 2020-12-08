@@ -233,4 +233,3 @@ ls = np.ones(7)
 for x in l:
     ls[x - 1] += 1
 
-print(ls)
