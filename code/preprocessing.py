@@ -78,7 +78,7 @@ def get_report_labels():
     for i in range(1, 21):
         report_col = "post-MR "
         report_col += str(i)
-        evidence_col = "evidence of cancer" 
+        evidence_col = "evidence of cancer"
         if i != 1:
             # pandas adds a ".number" to each repeated column name
             evidence_col += "."
@@ -91,7 +91,7 @@ def get_report_labels():
     # remove reports that don't have a label
     report_labels = remove_nan_labels(report_labels)
     return report_labels
-    
+
 def get_report_impressions():
     """
         Input: None
@@ -108,7 +108,7 @@ def get_report_impressions():
             continue
         # print("--------------------------------------")
         # print(open("../data/reports/" + name, "r").read())
-        report = open("../data/reports/" + name, "r").readlines()
+        report = open("../data/reports/" + name, "r",  encoding="utf8").readlines()
         add_to_impression = False
         impression = ""
         for line in report:
@@ -158,10 +158,10 @@ def clean_dictionary_entries():
 
     # ensure report id keys are all in the same format, start with sorted key list
     impressions_sorted_old = sorted(impressions_dict)
-    labels_sorted_old = sorted(labels_dict) 
+    labels_sorted_old = sorted(labels_dict)
 
     # remove unicode characters
-    impressions_sorted_new = [unicodedata.normalize("NFKD", x) for x in impressions_sorted_old] 
+    impressions_sorted_new = [unicodedata.normalize("NFKD", x) for x in impressions_sorted_old]
     labels_sorted_new = [unicodedata.normalize("NFKD", x) for x in labels_sorted_old]
 
     # remove whitespaces to even out input
@@ -186,7 +186,7 @@ def clean_dictionary_entries():
     for key in to_remove_from_impressions:
         impressions_sorted_new.remove(key)
         del impressions_dict[key]
-    
+
     for key in to_remove_from_labels:
         labels_sorted_new.remove(key)
         del labels_dict[key]
