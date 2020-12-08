@@ -90,7 +90,7 @@ class MSNR():
         print(embeddings.shape)
         # outputs = self.dense_layer(embeddings)
         # X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
-        print(X.shape)
+        # print(X.shape)
         # X = tf.keras.layers.BatchNormalization()(X)
         # X = tf.keras.layers.Dense(128, activation='relu')(X)
         # X = tf.keras.layers.Dropout(0.1)(X)
