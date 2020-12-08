@@ -228,3 +228,9 @@ def make_entries_integers(key_list):
 def get_data():
     impressions, labels = clean_dictionary_entries()
     return (impressions, labels)
+i, l = get_data()
+ls = np.ones(7)
+for x in l:
+    ls[x - 1] += 1
+
+print(ls)

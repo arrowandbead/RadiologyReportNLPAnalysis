@@ -11,6 +11,7 @@ class MSNR():
 
         # Initializa model and tokenizer
         file_name = "giacomomiolo/biobert_reupload"
+        bert_name = "bert-base-cased"
         self.biobert_tokenizer = AutoTokenizer.from_pretrained(file_name)
         self.biobert = TFAutoModel.from_pretrained(file_name)
 
@@ -60,8 +61,7 @@ class MSNR():
         dataset = dataset.map(self.map_func)  # apply the mapping function
 
         # shuffle and batch dataset
-        dataset = dataset.shuffle(454).batch(32)
-
+        dataset = dataset.shuffle(908).batch(32)
         # create train and test sets
         train_data = dataset.take(round(len(dataset) * 0.8))
         test_data = dataset.skip(round(len(dataset) * 0.8))
@@ -86,9 +86,11 @@ class MSNR():
             Output: None
         """
         embeddings, train_data, test_data = self.get_biobert_embeddings()
+        print(embeddings.shape)
         # outputs = self.dense_layer(embeddings)
         X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
-        X = tf.keras.layers.BatchNormalization()(X)
+        print(X.shape)
+        X = tf.keras.layers.BatchNormalization()(embeddings)
         X = tf.keras.layers.Dense(128, activation='relu')(X)
         X = tf.keras.layers.Dropout(0.1)(X)
         y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X) 
