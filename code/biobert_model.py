@@ -126,9 +126,12 @@ class MSNR():
 
         # create train and test sets
         train_data = dataset.take(round(len(dataset) * 0.8))
-        test_data = dataset.skip(round(len(dataset) * 0.2))
+        test_data = dataset.skip(round(len(dataset) * 0.8))
 
-        # # free space
+        len(train_data)
+        len(test_data)
+
+        # free space
         # del dataset
 
         return self.biobert(self.input_ids, attention_mask=self.mask)[0], train_data, test_data
