@@ -150,9 +150,9 @@ class MSNR():
         history = model.fit(train_data, epochs=20) 
         print(history)
         p = model.predict(train_data.map(self.get_input_ids_and_mask))
-        print(p)
-        # results = model.evaluate(test_data)
-        # print("results", results)
+        print(p[0])
+        results = model.evaluate(test_data)
+        print("results", results)
 
         # correct= 0
         # total = len(self.endImp)
