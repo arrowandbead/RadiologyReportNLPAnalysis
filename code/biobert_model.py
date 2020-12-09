@@ -142,7 +142,7 @@ class MSNR():
         # freeze the BERT layer
         model.layers[2].trainable = False
 
-        recall_metric = Metrics(train_data)
+        #recall_metric = Metrics(train_data)
 
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy])
 
