@@ -26,7 +26,7 @@ class MSNR():
         self.mask = tf.keras.layers.Input(shape=(SEQ_LEN,), name='attention_mask', dtype='int32')
 
         # Model variables
-        self.optimizer = tf.keras.optimizers.Adam(0.01)
+        self.optimizer = tf.keras.optimizers.Adam(0.0001)
         self.loss = tf.keras.losses.CategoricalCrossentropy()
         self.accuracy = tf.keras.metrics.CategoricalAccuracy('accuracy')
 
@@ -51,7 +51,7 @@ class MSNR():
         # self.endLab = self.labels[-160:]
         # self.labels = self.labels[:-160]
         
-    class RecallCallback(tf.keras.callbacks.Callback):
+    class AccuracyCallback(tf.keras.callbacks.Callback):
         def __init__(self, x, y, model):
             self.x = x
             self.y_true = np.array([])
@@ -122,7 +122,7 @@ class MSNR():
         dataset = dataset.map(self.prep_for_biobert) 
 
         # shuffle and batch dataset
-        dataset = dataset.shuffle(len(self.impressions)).batch(32) # this buffer size should perfectly shuffle
+        dataset = dataset.shuffle(len(self.impressions)).batch(8) # this buffer size should perfectly shuffle
 
         # create train and test sets
         train_data = dataset.take(round(len(dataset) * 0.8))
@@ -134,7 +134,7 @@ class MSNR():
         # free space
         # del dataset
 
-        return self.biobert(self.input_ids, attention_mask=self.mask)[0], train_data, test_data, Xmask
+        return self.biobert(self.input_ids, attention_mask=self.mask)[0], train_data, test_data
 
     def prep_for_biobert(self, input_ids, masks, labels):
         """
@@ -170,16 +170,16 @@ class MSNR():
             Input: None
             Output: None
         """
-        embeddings, train_data, test_data, mask = self.get_biobert_embeddings()
+        embeddings, train_data, test_data = self.get_biobert_embeddings()
         # X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
         # X = tf.keras.layers.BatchNormalization()(X)
         # X = tf.keras.layers.Dense(128, activation='relu')(X)
         # X = tf.keras.layers.Dropout(0.1)(X)
         # y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X) 
        
-        X = tf.keras.layers.GlobalAveragePooling1D()(embeddings, mask)  # reduce tensor dimensionality
+        X = tf.keras.layers.GlobalAveragePooling1D()(embeddings)  # reduce tensor dimensionality
         X = tf.keras.layers.BatchNormalization()(X)
-        X = tf.keras.layers.Dense(768, activation='relu')(X)
+        X = tf.keras.layers.Dense(768)(X)
         X=  tf.keras.layers.ThresholdedReLU(theta=0.1)(X)
         X = tf.keras.layers.Dropout(0.75)(X)
         y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X)
@@ -189,7 +189,7 @@ class MSNR():
         # freeze the BERT layer
         model.layers[2].trainable = False
 
-        per_class_accuracy_train = MSNR.RecallCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels), model)
+        per_class_accuracy_train = MSNR.AccuracyCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels), model)
 
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy])
 
@@ -205,7 +205,7 @@ class MSNR():
         print("-" * 55)
 
         # get per class accuracy
-        per_class_accuracy_test = MSNR.RecallCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
+        per_class_accuracy_test = MSNR.AccuracyCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
         per_class_accuracy_test.on_epoch_end(0)
 
         # correct= 0
