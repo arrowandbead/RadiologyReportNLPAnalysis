@@ -235,7 +235,7 @@ def get_data():
 
     print("-" * 10, "NUMBER OF EXAMPLES PER LABEL", "-" * 10)
     print(count)
-    print("-" * 45)
+    print("-" * 55)
 
 
     return (impressions, labels)

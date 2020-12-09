@@ -180,12 +180,12 @@ class MSNR():
         # and train it
         print("-" * 15, "TRAIN RESULTS", "-" * 15)
         model.fit(train_data, epochs=20, callbacks=[train_recall]) 
-        print("-" * 45)
+        print("-" * 55)
 
         print("-" * 15, "TEST RESULTS", "-" * 15)
         results = model.evaluate(test_data)
         print(results)
-        print("-" * 45)
+        print("-" * 55)
 
         # get per class accuracy
         test_recall = MSNR.RecallCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
