@@ -69,9 +69,9 @@ class MSNR():
             self.reports.append(report)
             correct_examples = np.zeros(7)
             total_examples = np.zeros(7)
+            accuracies = np.zeros(7)
 
             for i in range(len(self.y_true)):
-                print("y true:", self.y_true[i])
                 total_examples[int(self.y_true[i])] += 1
                 correct_examples[int(self.y_true[i])] += 1 if int(self.y_true[i]) == int(y_predicted[i]) else 0 
             
