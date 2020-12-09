@@ -56,6 +56,8 @@ class MSNR():
             self.x = x
             # self.y = y if (y.ndim == 1 or y.shape[1] == 1) else np.argmax(y, axis=1)
             print("y inside recall:", y)
+            y = list(y)
+            print("as list", y)
             for e in y:
                 print(e)
             self.y_true = np.argmax(y, axis=1) # decode one-hot labels
