@@ -67,10 +67,23 @@ class MSNR():
             y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
             report = classification_report(self.y_true, y_predicted, labels=[0, 1, 2, 3, 4, 5, 6], output_dict=True)
             self.reports.append(report)
+            correct_examples = np.zeros(7)
+            total_examples = np.zeros(7)
+            accuracies = np.zeros(7)
+
+            for i in range(len(self.y_true)):
+                total_examples[int(self.y_true[i])] += 1
+                correct_examples[int(self.y_true[i])] += 1 if int(self.y_true[i]) == int(y_predicted[i]) else 0 
+            
+            for i in range(7):
+                accuracies[i] = correct_examples[i] / total_examples[i] if total_examples[i] != 0 else 0.0
+            # print("\n")
+            # print("accuracy per class:", [report[str(label)]['recall'] for label in range(7)]) # recall = TP / (TP + FN)
+            # print("number of examples per class:", [report[str(label)]['support'] for label in range(7)])
+            # print("\n")
             print("\n")
-            print("accuracy per class:", [report[str(label)]['recall'] for label in range(7)]) # recall = TP / (TP + FN)
-            print("number of examples per class:", [report[str(label)]['support'] for label in range(7)])
-            print("\n")
+            print("accuracy per class:", accuracies)
+            print("# of examples per class:", total_examples)
             return
     
         # Utility method
@@ -113,9 +126,12 @@ class MSNR():
 
         # create train and test sets
         train_data = dataset.take(round(len(dataset) * 0.8))
-        test_data = dataset.skip(round(len(dataset) * 0.2))
+        test_data = dataset.skip(round(len(dataset) * 0.8))
 
-        # # free space
+        len(train_data)
+        len(test_data)
+
+        # free space
         # del dataset
 
         return self.biobert(self.input_ids, attention_mask=self.mask)[0], train_data, test_data
