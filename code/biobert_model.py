@@ -71,6 +71,7 @@ class MSNR():
             total_examples = np.zeros(7)
 
             for i in range(len(self.y_true)):
+                print("y true:", self.y_true[i])
                 total_examples[self.y_true[i]] += 1
                 correct_examples[self.y_true[i]] += 1 if self.y_true[i] == y_predicted[i] else 0 
             
