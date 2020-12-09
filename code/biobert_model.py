@@ -72,8 +72,8 @@ class MSNR():
 
             for i in range(len(self.y_true)):
                 print("y true:", self.y_true[i])
-                total_examples[self.y_true[i]] += 1
-                correct_examples[self.y_true[i]] += 1 if self.y_true[i] == y_predicted[i] else 0 
+                total_examples[int(self.y_true[i])] += 1
+                correct_examples[int(self.y_true[i])] += 1 if int(self.y_true[i]) == int(y_predicted[i]) else 0 
             
             for i in range(7):
                 accuracies[i] = correct_examples[i] / total_examples[i] if total_examples[i] != 0 else 0.0
