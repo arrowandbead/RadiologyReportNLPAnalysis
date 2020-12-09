@@ -52,9 +52,10 @@ class MSNR():
         self.labels = self.labels[:-160]
         
     class RecallCallback(tf.keras.callbacks.Callback):
-        def __init__(self, x, y):
+        def __init__(self, x, y, model):
             self.x = x
             self.y_true = np.array([])
+            self.model = model
 
             # decode one-hot labels in each batch
             for batch_of_labels in y:
@@ -173,15 +174,13 @@ class MSNR():
         # freeze the BERT layer
         model.layers[2].trainable = False
 
-        train_recall = MSNR.RecallCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels))
+        train_recall = MSNR.RecallCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels), model)
 
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy])
 
         # and train it
         history = model.fit(train_data, epochs=20, callbacks=[train_recall]) 
         print(history)
-        p = model.predict(train_data.map(self.get_input_ids_and_mask))
-        print(p[0])
         results = model.evaluate(test_data)
         print("results", results)
         print("class report:")
