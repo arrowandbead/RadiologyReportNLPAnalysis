@@ -134,7 +134,7 @@ class MSNR():
         # free space
         # del dataset
 
-        return self.biobert(self.input_ids, attention_mask=self.mask)[0], train_data, test_data
+        return self.biobert(self.input_ids, attention_mask=self.mask)[0], train_data, test_data, Xmask
 
     def prep_for_biobert(self, input_ids, masks, labels):
         """
@@ -170,32 +170,33 @@ class MSNR():
             Input: None
             Output: None
         """
-        embeddings, train_data, test_data = self.get_biobert_embeddings()
-        X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
+        embeddings, train_data, test_data, mask = self.get_biobert_embeddings()
+        # X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
+        # X = tf.keras.layers.BatchNormalization()(X)
+        # X = tf.keras.layers.Dense(128, activation='relu')(X)
+        # X = tf.keras.layers.Dropout(0.1)(X)
+        # y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X) 
+       
+        X = tf.keras.layers.GlobalAveragePooling1D()(embeddings, mask)  # reduce tensor dimensionality
         X = tf.keras.layers.BatchNormalization()(X)
-        X = tf.keras.layers.Dense(128, activation='relu')(X)
-        X = tf.keras.layers.Dropout(0.1)(X)
-        y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X) 
+        X = tf.keras.layers.Dense(768, activation='relu')(X)
+        X=  tf.keras.layers.ThresholdedReLU(theta=0.1)(X)
+        X = tf.keras.layers.Dropout(0.75)(X)
+        y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X)
+        
         model = tf.keras.Model(inputs=[self.input_ids, self.mask], outputs=y)
 
-        # X = tf.keras.layers.GlobalAveragePooling1D()(embeddings, mask)  # reduce tensor dimensionality
-        # X = tf.keras.layers.BatchNormalization()(X)
-        # X = tf.keras.layers.Dense(768)(X)
-        # X=  tf.keras.layers.ThresholdedReLU(theta=0.1)(X)
-        # X = tf.keras.layers.Dropout(0.75)(X)
-        # y = tf.keras.layers.Dense(6, activation='softmax', name='outputs')(X)
-        
         # freeze the BERT layer
         model.layers[2].trainable = False
 
-        train_recall = MSNR.RecallCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels), model)
+        per_class_accuracy_train = MSNR.RecallCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels), model)
 
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy])
 
 
         # and train it
         print("-" * 15, "TRAIN RESULTS", "-" * 15)
-        model.fit(train_data, epochs=20, callbacks=[train_recall]) 
+        model.fit(train_data, epochs=175, callbacks=[per_class_accuracy_train]) 
         print("-" * 55)
 
         print("-" * 15, "TEST RESULTS", "-" * 15)
@@ -204,8 +205,8 @@ class MSNR():
         print("-" * 55)
 
         # get per class accuracy
-        test_recall = MSNR.RecallCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
-        test_recall.on_epoch_end(0)
+        per_class_accuracy_test = MSNR.RecallCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
+        per_class_accuracy_test.on_epoch_end(0)
 
         # correct= 0
         # total = len(self.endImp)
