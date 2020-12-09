@@ -227,4 +227,15 @@ def make_entries_integers(key_list):
 
 def get_data():
     impressions, labels = clean_dictionary_entries()
+
+    # print number of examples per label
+    count = np.ones(7)
+    for label in labels:
+        count[label - 1] += 1
+
+    print("-" * 10, "NUMBER OF EXAMPLES PER LABEL", "-" * 10)
+    print(count)
+    print("-" * 55)
+
+
     return (impressions, labels)
