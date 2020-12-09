@@ -70,7 +70,6 @@ class MSNR():
             print("\n")
             print("accuracy, per class:", [report[str(label)]['recall'] for label in range(7)])
             print("\n")
-            # print("total report:", report)
             return
     
         # Utility method
@@ -143,7 +142,6 @@ class MSNR():
             Output: labels tensor
         """
         return labels
-
   
     def predict_impression(self, impression):
         ids, mask = self.tokenize(impression)
@@ -163,7 +161,6 @@ class MSNR():
         y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X) 
         model = tf.keras.Model(inputs=[self.input_ids, self.mask], outputs=y)
 
-
         # X = tf.keras.layers.GlobalAveragePooling1D()(embeddings, mask)  # reduce tensor dimensionality
         # X = tf.keras.layers.BatchNormalization()(X)
         # X = tf.keras.layers.Dense(768)(X)
@@ -178,14 +175,19 @@ class MSNR():
 
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy])
 
+
         # and train it
+        print("-" * 10, "TRAIN RESULTS", "-" * 10)
         history = model.fit(train_data, epochs=20, callbacks=[train_recall]) 
-        print(history)
+        print("-" * 30)
+
+        print("-" * 10, "TEST RESULTS", "-" * 10)
         results = model.evaluate(test_data)
-        print("results", results)
-        print("class report:")
+        print(results)
+
+        # get per class accuracy
         test_recall = MSNR.RecallCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
-        print(test_recall.on_epoch_end(0))
+        test_recall.on_epoch_end(0)
 
         # correct= 0
         # total = len(self.endImp)
@@ -212,7 +214,6 @@ class MSNR():
         #         print(str(thing) + " : " + "N/A")
         #     print(labelMap[thing][1])
         #     print(" ")
-
 
 def main():
 
