@@ -155,9 +155,9 @@ class MSNR():
         for label_set in labels:
             # print("argmax", tf.argmax(label_set, axis=1))
             p = label_set
-            print("p as it is:", p)
-            print("p as numpy:", list(p))
-            print("p as iterator:", list(p.as_numpy_iterator()))
+            # print("p as it is:", p)
+            # print("p as numpy:", list(p))
+            # print("p as iterator:", list(p.as_numpy_iterator()))
             # print("into ndarray", tf.make_ndarray(p))
 
         return labels
