@@ -11,7 +11,7 @@ class MSNR():
     def __init__(self):
         # super(MSNR, self).__init__()
 
-        # Initializa model and tokenizer
+        # Initialize model and tokenizer
         file_name = "giacomomiolo/biobert_reupload"
         bert_name = "bert-base-cased"
         self.biobert_tokenizer = AutoTokenizer.from_pretrained(file_name)
@@ -30,26 +30,26 @@ class MSNR():
         self.loss = tf.keras.losses.CategoricalCrossentropy()
         self.accuracy = tf.keras.metrics.CategoricalAccuracy('accuracy')
 
-        newImpressions = []
-        newLabels = []
+        # newImpressions = []
+        # newLabels = []
 
-        for i, thing in enumerate(self.labels):
-            if thing != 7:
-                newImpressions.append(self.impressions[i])
-                newLabels.append(self.labels[i])
+        # for i, thing in enumerate(self.labels):
+        #     if thing != 7:
+        #         newImpressions.append(self.impressions[i])
+        #         newLabels.append(self.labels[i])
 
-        self.impressions = newImpressions
-        self.labels = newLabels
+        # self.impressions = newImpressions
+        # self.labels = newLabels
 
-        tog = list(zip(self.impressions, self.labels))
-        random.shuffle(tog)
-        self.impressions, self.labels = zip(*tog)
+        # tog = list(zip(self.impressions, self.labels))
+        # random.shuffle(tog)
+        # self.impressions, self.labels = zip(*tog)
 
-        self.endImp = self.impressions[-160:]
-        self.impressions = self.impressions[:-160]
+        # self.endImp = self.impressions[-160:]
+        # self.impressions = self.impressions[:-160]
 
-        self.endLab = self.labels[-160:]
-        self.labels = self.labels[:-160]
+        # self.endLab = self.labels[-160:]
+        # self.labels = self.labels[:-160]
         
     class RecallCallback(tf.keras.callbacks.Callback):
         def __init__(self, x, y, model):
@@ -68,7 +68,8 @@ class MSNR():
             report = classification_report(self.y_true, y_predicted, labels=[0, 1, 2, 3, 4, 5, 6], output_dict=True)
             self.reports.append(report)
             print("\n")
-            print("accuracy, per class:", [report[str(label)]['recall'] for label in range(7)])
+            print("accuracy per class:", [report[str(label)]['recall'] for label in range(7)]) # recall = TP / (TP + FN)
+            print("number of examples per class:", [report[str(label)]['support'] for label in range(7)])
             print("\n")
             return
     
@@ -108,7 +109,7 @@ class MSNR():
         dataset = dataset.map(self.prep_for_biobert) 
 
         # shuffle and batch dataset
-        dataset = dataset.shuffle(908).batch(32)
+        dataset = dataset.shuffle(len(self.impressions)).batch(32) # this buffer size should perfectly shuffle
 
         # create train and test sets
         train_data = dataset.take(round(len(dataset) * 0.8))
@@ -147,7 +148,7 @@ class MSNR():
         ids, mask = self.tokenize(impression)
         return self.model.predict([ids, mask])
 
-    def train_model(self):   
+    def run_model(self):   
         """
             Purpose: Instantiates and trains the model
             Input: None
@@ -178,7 +179,7 @@ class MSNR():
 
         # and train it
         print("-" * 10, "TRAIN RESULTS", "-" * 10)
-        history = model.fit(train_data, epochs=20, callbacks=[train_recall]) 
+        model.fit(train_data, epochs=20, callbacks=[train_recall]) 
         print("-" * 30)
 
         print("-" * 10, "TEST RESULTS", "-" * 10)
@@ -218,8 +219,7 @@ class MSNR():
 def main():
 
     m = MSNR()
-    print(m.train_model())
-
+    print(m.run_model())
 
 if __name__ == '__main__':
     main()
