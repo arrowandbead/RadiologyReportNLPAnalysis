@@ -184,7 +184,7 @@ class MSNR():
         results = model.evaluate(test_data)
         print("results", results)
         print("class report:")
-        test_recall = MSNR.RecallCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels))
+        test_recall = MSNR.RecallCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
         print(test_recall.on_epoch_end(0))
 
         # correct= 0
