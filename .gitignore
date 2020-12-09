@@ -1,5 +1,4 @@
 data/*
 environment/*
 biobert_reupload/
-code/venv/*
 __pycache__
