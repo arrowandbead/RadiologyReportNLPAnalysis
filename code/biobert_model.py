@@ -62,7 +62,10 @@ class MSNR():
                 number_of_tensors += batch_of_labels.shape[0]
                 print("one ele inside y")
                 print(batch_of_labels)
-                print("as nd array:", tf.make_ndarray(batch_of_labels))
+                o = tf.make_tensor_proto(batch_of_labels)
+                print("tensor proto:", o)
+                i = tf.make_ndarray(batch_of_labels)
+                print("as nd array:", i)
             print("num of labels:", number_of_tensors)
             for e in x:
                 print("one e in x")
