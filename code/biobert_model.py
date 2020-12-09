@@ -73,12 +73,15 @@ class MSNR():
             for i in range(len(self.y_true)):
                 total_examples[self.y_true[i]] += 1
                 correct_examples[self.y_true[i]] += 1 if self.y_true[i] == y_predicted[i] else 0 
+            
+            for i in range(7):
+                accuracies[i] = correct_examples[i] / total_examples[i] if total_examples[i] != 0 else 0.0
             # print("\n")
             # print("accuracy per class:", [report[str(label)]['recall'] for label in range(7)]) # recall = TP / (TP + FN)
             # print("number of examples per class:", [report[str(label)]['support'] for label in range(7)])
             # print("\n")
             print("\n")
-            print("accuracy per class:", correct_examples / total_examples)
+            print("accuracy per class:", accuracies)
             print("# of examples per class:", total_examples)
             return
     
