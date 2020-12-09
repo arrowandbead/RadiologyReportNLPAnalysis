@@ -59,7 +59,7 @@ class MSNR():
             # decode one-hot labels in each batch
             for batch_of_labels in y:
                 batch_labels_as_array = tf.make_ndarray(tf.make_tensor_proto(batch_of_labels))
-                self.y = np.append(self.y, np.argmax(batch_labels_as_array))
+                self.y_true = np.append(self.y_true, np.argmax(batch_labels_as_array))
             print("y true:", self.y_true)
             self.reports = []
 
