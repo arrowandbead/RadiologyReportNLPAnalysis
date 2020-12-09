@@ -157,10 +157,6 @@ class MSNR():
             p = tf.argmax(label_set, axis=1)
             for i in p:
                 print("should be a num", i)
-        
-            # label_set = tf.argmax(label_set, axis=1)
-        # print("new labels, should be ")
-        # for l in labels:
 
         return labels
 
