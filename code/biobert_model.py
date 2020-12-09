@@ -154,7 +154,7 @@ class MSNR():
         decoded_labels = []
         for label_set in labels:
             # print("argmax", tf.argmax(label_set, axis=1))
-            p = tf.argmax(label_set, axis=1)
+            p = np.argmax(label_set, axis=1)
             print("argmax", p)
             print("into ndarray", tf.make_ndarray(p))
 
