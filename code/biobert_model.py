@@ -1,6 +1,8 @@
 from transformers import AutoTokenizer, TFAutoModel
+from sklearn.metrics import classification_report
 import tensorflow as tf
 import numpy as np
+import random
 from preprocessing import get_data
 
 SEQ_LEN = 128
@@ -19,8 +21,7 @@ class MSNR():
         self.num_labels = 7
         self.impressions, self.labels = get_data()
 
-        # Input and layers
-        # self.dense_layer = tf.keras.layers.Dense(self.num_labels, activation='softmax', name='outputs')  # adjust based on number of sentiment classes
+        # Input layers
         self.input_ids = tf.keras.layers.Input(shape=(SEQ_LEN,), name='input_ids', dtype='int32')
         self.mask = tf.keras.layers.Input(shape=(SEQ_LEN,), name='attention_mask', dtype='int32')
 
@@ -28,6 +29,28 @@ class MSNR():
         self.optimizer = tf.keras.optimizers.Adam(0.01)
         self.loss = tf.keras.losses.CategoricalCrossentropy()
         self.accuracy = tf.keras.metrics.CategoricalAccuracy('accuracy')
+
+        newImpressions = []
+        newLabels = []
+
+        for i, thing in enumerate(self.labels):
+            if thing != 7:
+                newImpressions.append(self.impressions[i])
+                newLabels.append(self.labels[i])
+
+        self.impressions = newImpressions
+        self.labels = newLabels
+
+        tog = list(zip(self.impressions, self.labels))
+        random.shuffle(tog)
+        self.impressions, self.labels = zip(*tog)
+
+        self.endImp = self.impressions[-160:]
+        self.impressions = self.impressions[:-160]
+
+        self.endLab = self.labels[-160:]
+        self.labels = self.labels[:-160]
+        
     
     def tokenize(self, impression):
         """
@@ -58,10 +81,11 @@ class MSNR():
 
         # create TF dataset object
         dataset = tf.data.Dataset.from_tensor_slices((Xids, Xmask, encoded_labels))
-        dataset = dataset.map(self.map_func)  # apply the mapping function
+        dataset = dataset.map(self.prep_for_biobert) 
 
         # shuffle and batch dataset
         dataset = dataset.shuffle(908).batch(32)
+
         # create train and test sets
         train_data = dataset.take(round(len(dataset) * 0.8))
         test_data = dataset.skip(round(len(dataset) * 0.2))
@@ -71,14 +95,26 @@ class MSNR():
 
         return self.biobert(self.input_ids, attention_mask=self.mask)[0], train_data, test_data
 
-    def map_func(self, input_ids, masks, labels):
+    def prep_for_biobert(self, input_ids, masks, labels):
         """
-            Purpose: structure data for input to BERT
+            Purpose: structure data for input to BioBERT
             Input: input_id, mask and encoded label arrays from our impressions and annotations
-            Output: tuple of (dictionary mapping name to array, labels)
+            Output: tuple of (dictionary mapping id to mask, labels)
         """
         return {'input_ids': input_ids, 'attention_mask': masks}, labels
+
+    def get_input_ids_and_mask(self, dictionary, labels):
+        """
+            Purpose: grab the data without the labels 
+            Input: {input_id:mask} dictionary and encoded label array
+            Output: dictionary mapping id to mask
+        """
+        return dictionary
+
   
+    def predict_impression(self, impression):
+        ids, mask = self.tokenize(impression)
+        return self.model.predict([ids, mask])
 
     def train_model(self):   
         """
@@ -87,27 +123,80 @@ class MSNR():
             Output: None
         """
         embeddings, train_data, test_data = self.get_biobert_embeddings()
-        print(embeddings.shape)
-        # outputs = self.dense_layer(embeddings)
         X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
         # print(X.shape)
-        # X = tf.keras.layers.BatchNormalization()(X)
-        # X = tf.keras.layers.Dense(128, activation='relu')(X)
-        # X = tf.keras.layers.Dropout(0.1)(X)
+        X = tf.keras.layers.BatchNormalization()(X)
+        X = tf.keras.layers.Dense(128, activation='relu')(X)
+        X = tf.keras.layers.Dropout(0.1)(X)
         y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X) 
         model = tf.keras.Model(inputs=[self.input_ids, self.mask], outputs=y)
+
+
+        # X = tf.keras.layers.GlobalAveragePooling1D()(embeddings, mask)  # reduce tensor dimensionality
+        # X = tf.keras.layers.BatchNormalization()(X)
+        # X = tf.keras.layers.Dense(768)(X)
+        # X=  tf.keras.layers.ThresholdedReLU(theta=0.1)(X)
+        # X = tf.keras.layers.Dropout(0.75)(X)
+        # y = tf.keras.layers.Dense(6, activation='softmax', name='outputs')(X)
         
         # freeze the BERT layer
         model.layers[2].trainable = False
 
+        recall_metric = Metrics(train_data)
+
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy])
 
         # and train it
-        history = model.fit(train_data, epochs=20)
+        history = model.fit(train_data, epochs=20) 
         print(history)
-        results = model.evaluate(test_data)
-        print("results", results)
+        p = model.predict(train_data.map(self.get_input_ids_and_mask))
+        print(p)
+        # results = model.evaluate(test_data)
+        # print("results", results)
 
+        # correct= 0
+        # total = len(self.endImp)
+        # labelMap = {}
+        # for i in range(1,7):
+        #     labelMap[i] = [0.0,0.0]
+
+        # for i in range(len(self.endImp)):
+
+
+        #     prediction = self.predict_impression(self.endImp[i])
+
+        #     if tf.math.argmax(prediction[0]).numpy() + 1 == self.endLab[i]:
+        #         correct += 1
+        #         labelMap[self.endLab[i]][0] += 1
+        #     labelMap[self.endLab[i]][1] += 1
+        # print('\n')
+        # print(correct/total)
+        # print('\n')
+        # for thing in labelMap:
+        #     if labelMap[thing][1] != 0:
+        #         print(str(thing) + " : " + str(labelMap[thing][0]/labelMap[thing][1]))
+        #     else:
+        #         print(str(thing) + " : " + "N/A")
+        #     print(labelMap[thing][1])
+        #     print(" ")
+
+    class Metrics(tf.keras.callbacks.Callback):
+        def __init__(self, x, y):
+            self.x = x
+            # self.y = y if (y.ndim == 1 or y.shape[1] == 1) else np.argmax(y, axis=1)
+            self.y_true = np.argmax(y, axis=1) # decode one-hot labels
+            self.reports = []
+
+        def on_epoch_end(self, epoch, logs={}):
+            y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
+            # y_predicted = np.where(y_predicted > 0.5, 1, 0) if (y_predicted.ndim == 1 or y_predicted.shape[1] == 1)  else np.argmax(y_predicted, axis=1)
+            report = classification_report(self.y_true, y_predicted, output_dict=True)
+            self.reports.append(report)
+            return
+    
+        # Utility method
+        def get(self, metrics, of_class):
+            return [report[str(of_class)][metrics] for report in self.reports]
 
 
 def main():
