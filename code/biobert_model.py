@@ -169,8 +169,10 @@ class MSNR():
         # freeze the BERT layer
         model.layers[2].trainable = False
 
-        print("labels from train:", np.asarray(train_data.map(self.get_labels)))
-        recall_metric = MSNR.RecallMetric(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels))
+        print("labels from train:", np.array(train_data.map(self.get_labels)))
+        print("labels from train 2:", tf.data.Dataset.as_numpy(train_data.map(self.get_labels)))
+
+        recall_metric = MSNR.RecallMetric(train_data.map(self.get_input_ids_and_mask), np.array(train_data.map(self.get_labels)))
 
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy, recall_metric])
 
