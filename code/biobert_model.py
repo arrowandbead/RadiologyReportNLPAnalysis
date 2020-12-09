@@ -57,9 +57,12 @@ class MSNR():
             # self.y = y if (y.ndim == 1 or y.shape[1] == 1) else np.argmax(y, axis=1)
             print("y inside recall:", y)
             print("as list", y)
+            number_of_tensors = 0
             for batch_of_labels in y:
+                number_of_tensors += batch_of_labels.shape[0]
                 print("one ele inside y")
                 print(batch_of_labels)
+            print("num of labels:", number_of_tensors)
             for e in x:
                 print("one e in x")
                 print(e)
@@ -71,6 +74,7 @@ class MSNR():
             y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
             print("y_predicted:")
             print(y_predicted)
+            print("num of y predicted:", len(y_predicted))
             # y_predicted = np.where(y_predicted > 0.5, 1, 0) if (y_predicted.ndim == 1 or y_predicted.shape[1] == 1)  else np.argmax(y_predicted, axis=1)
             report = classification_report(self.y_true, y_predicted, labels=[0, 1, 2, 3, 4, 5, 6], output_dict=True)
             self.reports.append(report)
@@ -146,8 +150,12 @@ class MSNR():
             Input: {input_id:mask} dictionary and encoded label array
             Output: dictionary mapping id to mask
         """
+        print("inside get labels")
         for label_set in labels:
             label_set = tf.argmax(label_set, axis=1)
+        # print("new labels, should be ")
+        # for l in labels:
+
         return labels
 
   
