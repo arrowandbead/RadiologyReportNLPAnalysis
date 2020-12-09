@@ -51,6 +51,24 @@ class MSNR():
         self.endLab = self.labels[-160:]
         self.labels = self.labels[:-160]
         
+    class RecallMetric(tf.keras.callbacks.Callback):
+        def __init__(self, x, y):
+            self.x = x
+            # self.y = y if (y.ndim == 1 or y.shape[1] == 1) else np.argmax(y, axis=1)
+            self.y_true = np.argmax(y, axis=1) # decode one-hot labels
+            self.reports = []
+
+        def on_epoch_end(self, epoch, logs={}):
+            y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
+            # y_predicted = np.where(y_predicted > 0.5, 1, 0) if (y_predicted.ndim == 1 or y_predicted.shape[1] == 1)  else np.argmax(y_predicted, axis=1)
+            report = classification_report(self.y_true, y_predicted, labels=[0, 1, 2, 3, 4, 5, 6], output_dict=True)
+            self.reports.append(report)
+            # print(report)
+            return
+    
+        # Utility method
+        def get(self, metrics, of_class):
+            return [report[str(of_class)][metrics] for report in self.reports]
     
     def tokenize(self, impression):
         """
@@ -142,9 +160,9 @@ class MSNR():
         # freeze the BERT layer
         model.layers[2].trainable = False
 
-        #recall_metric = Metrics(train_data)
+        recall_metric = RecallMetric(train_data)
 
-        model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy])
+        model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy, recall_metric])
 
         # and train it
         history = model.fit(train_data, epochs=20) 
@@ -153,6 +171,8 @@ class MSNR():
         print(p[0])
         results = model.evaluate(test_data)
         print("results", results)
+        print("class report:")
+        print(classification_report(test_data))
 
         # correct= 0
         # total = len(self.endImp)
@@ -179,24 +199,6 @@ class MSNR():
         #         print(str(thing) + " : " + "N/A")
         #     print(labelMap[thing][1])
         #     print(" ")
-
-    class Metrics(tf.keras.callbacks.Callback):
-        def __init__(self, x, y):
-            self.x = x
-            # self.y = y if (y.ndim == 1 or y.shape[1] == 1) else np.argmax(y, axis=1)
-            self.y_true = np.argmax(y, axis=1) # decode one-hot labels
-            self.reports = []
-
-        def on_epoch_end(self, epoch, logs={}):
-            y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
-            # y_predicted = np.where(y_predicted > 0.5, 1, 0) if (y_predicted.ndim == 1 or y_predicted.shape[1] == 1)  else np.argmax(y_predicted, axis=1)
-            report = classification_report(self.y_true, y_predicted, output_dict=True)
-            self.reports.append(report)
-            return
-    
-        # Utility method
-        def get(self, metrics, of_class):
-            return [report[str(of_class)][metrics] for report in self.reports]
 
 
 def main():
