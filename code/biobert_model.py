@@ -69,6 +69,8 @@ class MSNR():
 
         def on_epoch_end(self, epoch, logs={}):
             y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
+            print("y_predicted:")
+            print(y_predicted)
             # y_predicted = np.where(y_predicted > 0.5, 1, 0) if (y_predicted.ndim == 1 or y_predicted.shape[1] == 1)  else np.argmax(y_predicted, axis=1)
             report = classification_report(self.y_true, y_predicted, labels=[0, 1, 2, 3, 4, 5, 6], output_dict=True)
             self.reports.append(report)
