@@ -144,6 +144,8 @@ class MSNR():
             Input: {input_id:mask} dictionary and encoded label array
             Output: dictionary mapping id to mask
         """
+        for label_set in labels:
+            label_set = tf.argmax(label_set, axis=1)
         return labels
 
   
