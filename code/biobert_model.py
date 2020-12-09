@@ -64,7 +64,7 @@ class MSNR():
                 print(batch_of_labels)
                 o = tf.make_tensor_proto(batch_of_labels)
                 print("tensor proto:", o)
-                i = tf.make_ndarray(batch_of_labels)
+                i = tf.make_ndarray(o)
                 print("as nd array:", i)
             print("num of labels:", number_of_tensors)
             for e in x:
