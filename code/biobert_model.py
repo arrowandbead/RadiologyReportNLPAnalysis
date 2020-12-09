@@ -67,10 +67,19 @@ class MSNR():
             y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
             report = classification_report(self.y_true, y_predicted, labels=[0, 1, 2, 3, 4, 5, 6], output_dict=True)
             self.reports.append(report)
+            correct_examples = np.zeros(7)
+            total_examples = np.zeros(7)
+
+            for i in range(len(self.y_true)):
+                total_examples[self.y_true[i]] += 1
+                correct_examples[self.y_true[i]] += 1 if self.y_true[i] == y_predicted[i] else 0 
+            # print("\n")
+            # print("accuracy per class:", [report[str(label)]['recall'] for label in range(7)]) # recall = TP / (TP + FN)
+            # print("number of examples per class:", [report[str(label)]['support'] for label in range(7)])
+            # print("\n")
             print("\n")
-            print("accuracy per class:", [report[str(label)]['recall'] for label in range(7)]) # recall = TP / (TP + FN)
-            print("number of examples per class:", [report[str(label)]['support'] for label in range(7)])
-            print("\n")
+            print("accuracy per class:", correct_examples / total_examples)
+            print("# of examples per class:", total_examples)
             return
     
         # Utility method
