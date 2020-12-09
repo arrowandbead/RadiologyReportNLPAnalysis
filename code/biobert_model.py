@@ -171,7 +171,7 @@ class MSNR():
         # y = tf.keras.layers.Dense(6, activation='softmax', name='outputs')(X)
         
         # freeze the BERT layer
-        model.layers[2].trainable = Falses
+        model.layers[2].trainable = False
 
         train_recall = MSNR.RecallCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels))
 
