@@ -55,7 +55,9 @@ class MSNR():
         def __init__(self, x, y):
             self.x = x
             # self.y = y if (y.ndim == 1 or y.shape[1] == 1) else np.argmax(y, axis=1)
-            print("y inside recall:", np.asarray(y))
+            print("y inside recall:", y)
+            for e in y:
+                print(e)
             self.y_true = np.argmax(y, axis=1) # decode one-hot labels
             self.reports = []
 
@@ -169,11 +171,6 @@ class MSNR():
         # freeze the BERT layer
         model.layers[2].trainable = False
 
-        # l = np.array(train_data)
-        # print("printing labels")
-        # for d in l:
-        #     print(d)
-        print(len(train_data[0]))
 
         recall_metric = MSNR.RecallMetric(train_data.map(self.get_input_ids_and_mask), np.array(train_data.map(self.get_labels)))
 
