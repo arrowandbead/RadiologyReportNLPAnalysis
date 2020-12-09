@@ -134,7 +134,7 @@ class MSNR():
         # free space
         # del dataset
 
-        return self.biobert(self.input_ids, attention_mask=self.mask)[0], train_data, test_data, Xmask
+        return self.biobert(self.input_ids, attention_mask=self.mask)[0], train_data, test_data
 
     def prep_for_biobert(self, input_ids, masks, labels):
         """
@@ -170,14 +170,14 @@ class MSNR():
             Input: None
             Output: None
         """
-        embeddings, train_data, test_data, mask = self.get_biobert_embeddings()
+        embeddings, train_data, test_data = self.get_biobert_embeddings()
         # X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
         # X = tf.keras.layers.BatchNormalization()(X)
         # X = tf.keras.layers.Dense(128, activation='relu')(X)
         # X = tf.keras.layers.Dropout(0.1)(X)
         # y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X) 
        
-        X = tf.keras.layers.GlobalAveragePooling1D()(embeddings, mask)  # reduce tensor dimensionality
+        X = tf.keras.layers.GlobalAveragePooling1D()(embeddings)  # reduce tensor dimensionality
         X = tf.keras.layers.BatchNormalization()(X)
         X = tf.keras.layers.Dense(768)(X)
         X=  tf.keras.layers.ThresholdedReLU(theta=0.1)(X)
