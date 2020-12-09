@@ -57,11 +57,14 @@ class MSNR():
             # self.y = y if (y.ndim == 1 or y.shape[1] == 1) else np.argmax(y, axis=1)
             print("y inside recall:", y)
             print("as list", y)
-            for e in y:
+            for batch_of_labels in y:
                 print("one ele inside y")
+                print(batch_of_labels)
+            for e in x:
+                print("one e in x")
                 print(e)
             self.y_true = np.argmax(y) # decode one-hot labels
-            print("y true:")
+            print("y true:", self.y_true)
             self.reports = []
 
         def on_epoch_end(self, epoch, logs={}):
