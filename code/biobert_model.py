@@ -151,8 +151,10 @@ class MSNR():
             Output: dictionary mapping id to mask
         """
         print("inside get labels")
+        decoded_labels = []
         for label_set in labels:
-            label_set = tf.argmax(label_set, axis=1)
+            print("argmax", tf.argmax(label_set, axis=1))
+            # label_set = tf.argmax(label_set, axis=1)
         # print("new labels, should be ")
         # for l in labels:
 
