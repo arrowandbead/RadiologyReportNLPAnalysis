@@ -153,7 +153,11 @@ class MSNR():
         print("inside get labels")
         decoded_labels = []
         for label_set in labels:
-            print("argmax", tf.argmax(label_set, axis=1))
+            # print("argmax", tf.argmax(label_set, axis=1))
+            p = tf.argmax(label_set, axis=1)
+            for i in p:
+                print("should be a num", i)
+        
             # label_set = tf.argmax(label_set, axis=1)
         # print("new labels, should be ")
         # for l in labels:
