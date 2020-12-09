@@ -69,7 +69,7 @@ class MSNR():
             print("\n")
             print("accuracy, per class:", [report[str(label)]['recall'] for label in range(7)])
             print("\n")
-            print("total report:", report)
+            # print("total report:", report)
             return
     
         # Utility method
