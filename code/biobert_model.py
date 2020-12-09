@@ -153,8 +153,9 @@ class MSNR():
         print("inside get labels")
         decoded_labels = []
         for label_set in labels:
+            print("inside gl:", label_set)
             # print("argmax", tf.argmax(label_set, axis=1))
-            p = label_set
+            # p = label_set
             # print("p as it is:", p)
             # print("p as numpy:", list(p))
             # print("p as iterator:", list(p.as_numpy_iterator()))
