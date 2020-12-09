@@ -54,23 +54,12 @@ class MSNR():
     class RecallCallback(tf.keras.callbacks.Callback):
         def __init__(self, x, y):
             self.x = x
-            # self.y = y if (y.ndim == 1 or y.shape[1] == 1) else np.argmax(y, axis=1)
-            print("y inside recall:", y)
-            print("as list", y)
-            number_of_tensors = 0
+            self.y_true = np.array([])
+
+            # decode one-hot labels in each batch
             for batch_of_labels in y:
-                number_of_tensors += batch_of_labels.shape[0]
-                print("one ele inside y")
-                print(batch_of_labels)
-                o = tf.make_tensor_proto(batch_of_labels)
-                print("tensor proto:", o)
-                i = tf.make_ndarray(o)
-                print("as nd array:", i)
-            print("num of labels:", number_of_tensors)
-            for e in x:
-                print("one e in x")
-                print(e)
-            self.y_true = np.argmax(y) # decode one-hot labels
+                batch_labels_as_array = tf.make_ndarray(tf.make_tensor_proto(batch_of_labels))
+                self.y = np.apend(self.y, np.argmax(batch_labels_as_array))
             print("y true:", self.y_true)
             self.reports = []
 
