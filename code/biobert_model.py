@@ -129,6 +129,14 @@ class MSNR():
         """
         return dictionary
 
+    def get_labels(self, dictionary, labels):
+        """
+            Purpose: grab the data without the labels 
+            Input: {input_id:mask} dictionary and encoded label array
+            Output: dictionary mapping id to mask
+        """
+        return labels
+
   
     def predict_impression(self, impression):
         ids, mask = self.tokenize(impression)
@@ -160,7 +168,7 @@ class MSNR():
         # freeze the BERT layer
         model.layers[2].trainable = False
 
-        recall_metric = MSNR.RecallMetric(train_data)
+        recall_metric = MSNR.RecallMetric(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels))
 
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy, recall_metric])
 
