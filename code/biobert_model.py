@@ -56,11 +56,10 @@ class MSNR():
             self.x = x
             # self.y = y if (y.ndim == 1 or y.shape[1] == 1) else np.argmax(y, axis=1)
             print("y inside recall:", y)
-            y = list(y)
             print("as list", y)
             for e in y:
                 print(e)
-            self.y_true = np.argmax(y, axis=1) # decode one-hot labels
+            self.y_true = np.argmax(y) # decode one-hot labels
             self.reports = []
 
         def on_epoch_end(self, epoch, logs={}):
@@ -174,7 +173,7 @@ class MSNR():
         model.layers[2].trainable = False
 
 
-        recall_metric = MSNR.RecallMetric(train_data.map(self.get_input_ids_and_mask), np.array(train_data.map(self.get_labels)))
+        recall_metric = MSNR.RecallMetric(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels))
 
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy, recall_metric])
 
