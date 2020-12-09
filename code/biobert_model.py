@@ -177,10 +177,10 @@ class MSNR():
 
         class_report = MSNR.RecallCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels))
 
-        model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy], callbacks=[class_report])
+        model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy])
 
         # and train it
-        history = model.fit(train_data, epochs=20) 
+        history = model.fit(train_data, epochs=20, callbacks=[class_report]) 
         print(history)
         p = model.predict(train_data.map(self.get_input_ids_and_mask))
         print(p[0])
