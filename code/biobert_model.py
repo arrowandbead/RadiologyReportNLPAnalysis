@@ -66,9 +66,10 @@ class MSNR():
             y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
             report = classification_report(self.y_true, y_predicted, labels=[0, 1, 2, 3, 4, 5, 6], output_dict=True)
             self.reports.append(report)
-
-            print([report[str(label)]['recall'] for label in range(7)])
-            # print()
+            print("\n")
+            print("accuracy, per class:", [report[str(label)]['recall'] for label in range(7)])
+            print("\n")
+            print("total report:", report)
             return
     
         # Utility method
@@ -137,20 +138,9 @@ class MSNR():
     def get_labels(self, dictionary, labels):
         """
             Purpose: grab the data without the labels 
-            Input: {input_id:mask} dictionary and encoded label array
-            Output: dictionary mapping id to mask
+            Input: {input_id:mask} dictionary and encoded labels tensor
+            Output: labels tensor
         """
-        print("inside get labels")
-        # decoded_labels = []
-        # for label_set in labels:
-        #     print("inside gl:", label_set)
-            # print("argmax", tf.argmax(label_set, axis=1))
-            # p = label_set
-            # print("p as it is:", p)
-            # print("p as numpy:", list(p))
-            # print("p as iterator:", list(p.as_numpy_iterator()))
-            # print("into ndarray", tf.make_ndarray(p))
-
         return labels
 
   
@@ -166,7 +156,6 @@ class MSNR():
         """
         embeddings, train_data, test_data = self.get_biobert_embeddings()
         X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
-        # print(X.shape)
         X = tf.keras.layers.BatchNormalization()(X)
         X = tf.keras.layers.Dense(128, activation='relu')(X)
         X = tf.keras.layers.Dropout(0.1)(X)
@@ -182,22 +171,22 @@ class MSNR():
         # y = tf.keras.layers.Dense(6, activation='softmax', name='outputs')(X)
         
         # freeze the BERT layer
-        model.layers[2].trainable = False
+        model.layers[2].trainable = Falses
 
-
-        class_report = MSNR.RecallCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels))
+        train_recall = MSNR.RecallCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels))
 
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy])
 
         # and train it
-        history = model.fit(train_data, epochs=20, callbacks=[class_report]) 
+        history = model.fit(train_data, epochs=20, callbacks=[train_recall]) 
         print(history)
         p = model.predict(train_data.map(self.get_input_ids_and_mask))
         print(p[0])
         results = model.evaluate(test_data)
         print("results", results)
         print("class report:")
-        print(classification_report(test_data))
+        test_recall = MSNR.RecallCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels))
+        print(test_recall.on_epoch_end(0))
 
         # correct= 0
         # total = len(self.endImp)
