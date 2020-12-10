@@ -231,8 +231,8 @@ class MSNR():
         test_labels = test_data.map(self.get_labels)
 
         # get per class accuracy
-        per_class_accuracy_test = MSNR.AccuracyCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
-        per_class_accuracy_test.on_epoch_end(0)
+        # per_class_accuracy_test = MSNR.AccuracyCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
+        # per_class_accuracy_test.on_epoch_end(0)
 
         y_true = np.array([])
 
@@ -241,7 +241,7 @@ class MSNR():
                 batch_labels_as_array = tf.make_ndarray(tf.make_tensor_proto(batch_of_labels))
                 y_true = np.append(y_true, np.argmax(batch_labels_as_array, axis=1))
 
-        y_predicted = np.argmax(np.asarray(self.model.predict(test_ids_and_mask)), axis=1)
+        y_predicted = np.argmax(np.asarray(model.predict(test_ids_and_mask)), axis=1)
         correct_examples = np.zeros(7)
         total_examples = np.zeros(7)
         accuracies = np.zeros(7)
@@ -254,6 +254,10 @@ class MSNR():
         for i in range(7):
             accuracies[i] = correct_examples[i] / total_examples[i] if total_examples[i] != 0 else 0.0
             # print("\n")
+
+        print("overall_epoch_accuracy", overall_epoch_accuracy)
+        print("accuracies", accuracies)
+        print("total_examples", total_examples)
 
         # correct = 0
         # total = 7
