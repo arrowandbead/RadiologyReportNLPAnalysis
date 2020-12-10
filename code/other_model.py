@@ -18,21 +18,16 @@ class MSNR(tf.keras.Model):
         # Hyperparameters
         self.optimizer = tf.keras.optimizers.Adam(0.01)
         self.loss = tf.keras.losses.CategoricalCrossentropy()
-        self.batch_size = 20
-        self.epochs = 100
+        self.batch_size = 30
+        self.epochs = 300
         self.cce = tf.keras.losses.CategoricalCrossentropy()
         
     def call(self, input_ids, input_masks):
-        # print("input ids:", input_ids)
-        # biobert_embeddings = []
-        # for i in range(len(input_ids)):
-        #     print(len(input_ids[i]))
-        #     print(biobert_embeddings(input_masks[i]))
-        embeddings = self.biobert(input_ids.astype('int32'), attention_mask=input_masks.astype('int32'))[0]
+        embeddings = self.biobert(input_ids, attention_mask=input_masks)[0]
         X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
-        X = tf.keras.layers.BatchNormalization()(X)
-        X = tf.keras.layers.Dense(128, activation='relu')(X)
-        X = tf.keras.layers.Dropout(0.1)(X)
+        # X = tf.keras.layers.BatchNormalization()(X)
+        X = tf.keras.layers.Dense(300, activation='relu')(X)
+        X = tf.keras.layers.Dropout(0.3)(X)
         probabilities = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X)
         
         return probabilities
@@ -120,9 +115,11 @@ class BioBERT():
         shuffled_indices = np.arange(len(self.impressions))
         np.random.shuffle(shuffled_indices)
         ids = ids[shuffled_indices]
+        ids = tf.convert_to_tensor(ids,  dtype='int32')
         masks = masks[shuffled_indices]
+        masks = tf.convert_to_tensor(masks, dtype='int32')
         encoded_labels = encoded_labels[shuffled_indices]
-
+        encoded_labels = tf.convert_to_tensor(encoded_labels)
         train_size = int(len(self.impressions) * 0.8)
         print("train size")
 
@@ -148,7 +145,7 @@ def train(model, train_ids, train_masks, train_labels):
     :param train_labels: train labels (all labels for training) of shape (num_labels,)
     :return: None
     """
-    print("inside train")
+    # print("inside train")
     # train in batches
     for i in range(0, len(train_ids), model.batch_size):
         batch_ids = train_ids[i:i + model.batch_size]
@@ -158,7 +155,8 @@ def train(model, train_ids, train_masks, train_labels):
             probabilities = model.call(batch_ids, batch_masks)
             curr_loss = model.loss_function(probabilities, batch_y)
         gradients = tape.gradient(curr_loss, model.trainable_variables)
-        model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+        # print("train vars:", model.trainable_variables)
+        model.optimizer.apply_gradients(zip((grad, var) for (grad, var) in zip(gradients, model.trainable_variables) if grad is not None))
 
 def test(model, test_ids, test_masks, test_labels):
     """
@@ -170,16 +168,6 @@ def test(model, test_ids, test_masks, test_labels):
     :returns: perplexity of the test set
     """
     
-    for i in range(0, len(test_ids), model.batch_size):
-        batch_ids = test_ids[i:i + model.batch_size]
-        batch_masks = test_masks[i:i + model.batch_size]
-        batch_y = test_labels[i:i + model.batch_size]
-        with tf.GradientTape() as tape:
-            probabilities = model.call(batch_ids, batch_masks)
-            curr_loss = model.loss_function(probabilities, batch_y)
-        gradients = tape.gradient(curr_loss, model.trainable_variables)
-        model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-
     # calculate accuracy instead of loss
     correct_overall = 0
     correct_per_class = np.zeros(7)
@@ -210,9 +198,10 @@ def main():
     train_data, test_data = biobert.tokenize_and_split_data()
     model = MSNR(impressions, labels, biobert)
 
-    for _ in range(model.epochs):
+    for i in range(model.epochs):
         train(model, train_data[0], train_data[1], train_data[2])
+        print("epoch:", i)
     print("acc, acc/class, example/class", test(model, test_data[0], test_data[1], test_data[2]))
-
+    
 if __name__ == '__main__':
     main()
