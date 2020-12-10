@@ -67,9 +67,23 @@ class BioBERT():
     def __init__(self, file_name, impressions, labels):
         self.biobert_tokenizer = AutoTokenizer.from_pretrained(file_name)
         self.biobert_model = TFAutoModel.from_pretrained(file_name)
+        # self.biobert_model._trainable = False
 
-        for param in self.biobert_model.parameters():
-            param.requires_grad = False
+        # for param in self.biobert_model.parameters():
+        #     param.requires_grad = False
+
+        # for param in self.biobert_model.bert.parameters():
+        #     param.requires_grad = False
+
+        # for name, param in self.biobert_model.named_parameters():
+        #     if 'classifier' not in name: # classifier layer
+        #         param.requires_grad = False
+
+        # for w in self.biobert_model.weights():
+        #     w._trainable= False
+
+        for w in self.biobert_model.weights:
+            w._trainable = False
             
         self.impressions = impressions
         self.labels = labels
