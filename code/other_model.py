@@ -83,7 +83,7 @@ class BioBERT():
 
         # shuffle
         shuffled_indices = np.arange(len(self.impressions))
-        np.shuffle(shuffled_indices)
+        np.random.shuffle(shuffled_indices)
         ids = ids[shuffled_indices]
         masks = masks[shuffled_indices]
         encoded_labels = encoded_labels[shuffled_indices]
