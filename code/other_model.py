@@ -19,6 +19,7 @@ class MSNR(tf.keras.Model):
         self.optimizer = tf.keras.optimizers.Adam(0.01)
         self.loss = tf.keras.losses.CategoricalCrossentropy()
         self.batch_size = 32
+        self.epochs = 20
         
     def call(self, input_ids, input_masks):
         embeddings = self.biobert(input_ids, attention_mask=input_masks)[0]
@@ -71,7 +72,7 @@ class BioBERT():
         """
         
         # one hot encode labels
-        encoded_labels = np.zeros((len(self.impressions), self.num_labels))
+        encoded_labels = np.zeros((len(self.impressions), 7))
         encoded_labels[np.arange(len(self.impressions)), np.array(self.labels) - 1] = 1
 
         # initialize two arrays for input tensors and tokenize impressions
@@ -111,7 +112,7 @@ def train(model, train_ids, train_masks, train_labels):
     :param train_labels: train labels (all labels for training) of shape (num_labels,)
     :return: None
     """
-
+    print("inside train")
     # train in batches
     for i in range(0, len(train_ids), model.batch_size):
         batch_ids = train_ids[i:i + model.batch_size]
