@@ -25,6 +25,8 @@ class MSNR(tf.keras.Model):
         print("input ids:", input_ids)
         embeddings = []
         for i in range(len(input_ids)):
+            print(len(input_ids[i]))
+            print(input_masks[i])
             embeddings.append(self.biobert(input_ids[i], attention_mask=input_masks[i])[0])
         X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
         X = tf.keras.layers.BatchNormalization()(X)
