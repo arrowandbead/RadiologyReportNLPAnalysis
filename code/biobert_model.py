@@ -53,27 +53,42 @@ class MSNR():
     class AccuracyCallback(tf.keras.callbacks.Callback):
         def __init__(self, x, y, model):
             self.x = x
+            self.y = y
             self.y_true = np.array([])
-            self.model = model
 
             # decode one-hot labels in each batch
             for batch in y:
                 print("Y batch:", batch)
                 batch_labels_as_array = tf.make_ndarray(tf.make_tensor_proto(batch))
-                self.y_true = np.append(self.y_true, np.argmax(batch, axis=1))
+                self.y_true = np.append(self.y_true, np.argmax(batch_labels_as_array, axis=1))
             
-            for batch in x:
-                print("X batch:", batch)
+            # for batch in x:
+            #     print("X batch:", batch)
             # self.reports = []
 
         def on_epoch_end(self, epoch, logs={}):
+            # predictions = []
+            # for batch in self.x:
+            #     for example in batch:
+            #         y_predicted = self.model.predict(example)
+            #         print("prediction:", y_predicted)
+            #         predictions.append(int(y_predicted))    
+
+            # true_label = []
+            # for batch in self.y:
+            #     for example_label in y:
+            #         true_label.append(int(example_label))
+                
             y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
             # report = classification_report(self.y_true, y_predicted, labels=[0, 1, 2, 3, 4, 5, 6], output_dict=True)
             # self.reports.append(report)
+
+
             correct_examples = np.zeros(7)
             total_examples = np.zeros(7)
             accuracies = np.zeros(7)
             overall_epoch_accuracy = np.mean(np.where(self.y_true == y_predicted, 1, 0))
+            # overall_epoch_accuracy = np.mean(np.where(y_true == predictions, 1, 0))
 
             for i in range(len(self.y_true)):
                 total_examples[int(self.y_true[i])] += 1
