@@ -70,6 +70,7 @@ class MSNR():
             correct_examples = np.zeros(7)
             total_examples = np.zeros(7)
             accuracies = np.zeros(7)
+            overall_epoch_accuracy = np.mean(np.where(self.y_true == y_predicted, 1, 0))
 
             for i in range(len(self.y_true)):
                 total_examples[int(self.y_true[i])] += 1
@@ -84,6 +85,7 @@ class MSNR():
             print("\n")
             print("accuracy per class:", accuracies)
             print("# of examples per class:", total_examples)
+            print("epoch accuracy as calculated by callback:", overall_epoch_accuracy)
             return
     
         # Utility method
@@ -208,31 +210,31 @@ class MSNR():
         per_class_accuracy_test = MSNR.AccuracyCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
         per_class_accuracy_test.on_epoch_end(0)
 
-        # correct= 0
-        # total = len(self.endImp)
-        # labelMap = {}
-        # for i in range(1,7):
-        #     labelMap[i] = [0.0,0.0]
+        correct= 0
+        total = len(self.endImp)
+        labelMap = {}
+        for i in range(1,7):
+            labelMap[i] = [0.0,0.0]
 
-        # for i in range(len(self.endImp)):
+        for i in range(len(self.endImp)):
 
 
-        #     prediction = self.predict_impression(self.endImp[i])
+            prediction = self.predict_impression(self.endImp[i])
 
-        #     if tf.math.argmax(prediction[0]).numpy() + 1 == self.endLab[i]:
-        #         correct += 1
-        #         labelMap[self.endLab[i]][0] += 1
-        #     labelMap[self.endLab[i]][1] += 1
-        # print('\n')
-        # print(correct/total)
-        # print('\n')
-        # for thing in labelMap:
-        #     if labelMap[thing][1] != 0:
-        #         print(str(thing) + " : " + str(labelMap[thing][0]/labelMap[thing][1]))
-        #     else:
-        #         print(str(thing) + " : " + "N/A")
-        #     print(labelMap[thing][1])
-        #     print(" ")
+            if tf.math.argmax(prediction[0]).numpy() + 1 == self.endLab[i]:
+                correct += 1
+                labelMap[self.endLab[i]][0] += 1
+            labelMap[self.endLab[i]][1] += 1
+        print('\n')
+        print(correct/total)
+        print('\n')
+        for thing in labelMap:
+            if labelMap[thing][1] != 0:
+                print(str(thing) + " : " + str(labelMap[thing][0]/labelMap[thing][1]))
+            else:
+                print(str(thing) + " : " + "N/A")
+            print(labelMap[thing][1])
+            print(" ")
 
 def main():
 
