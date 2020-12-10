@@ -121,7 +121,7 @@ class BioBERT():
         encoded_labels = tf.convert_to_tensor(encoded_labels)
 
         # split into train-test
-        train_size = int(len(self.impressions) * 0.8)
+        train_size = int(len(self.impressions) * SPLIT)
         train_ids = ids[:train_size]
         train_mask = masks[:train_size]
         train_labels = encoded_labels[:train_size]
