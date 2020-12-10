@@ -211,8 +211,9 @@ class MSNR():
 
         # freeze the BERT layer
         model.layers[2].trainable = False
+        print(model.layers)
 
-        per_class_accuracy_train = MSNR.AccuracyCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels), model)
+        # per_class_accuracy_train = MSNR.AccuracyCallback(train_data.map(self.get_input_ids_and_mask), train_data.map(self.get_labels), model)
 
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.accuracy])
 
@@ -220,7 +221,7 @@ class MSNR():
         # and train it
         print("-" * 15, "TRAIN RESULTS", "-" * 15)
         # model.fit(train_data, epochs=175, callbacks=[per_class_accuracy_train])
-        model.fit(train_data, epochs=20, callbacks=[per_class_accuracy_train]) 
+        model.fit(train_data, epochs=20) 
  
         print("-" * 55)
 

@@ -18,17 +18,28 @@ class MSNR(tf.keras.Model):
         # Hyperparameters
         self.optimizer = tf.keras.optimizers.Adam(0.01)
         self.loss = tf.keras.losses.CategoricalCrossentropy()
-        self.batch_size = 30
-        self.epochs = 300
+        self.batch_size = 32
+        self.epochs = 20
         self.cce = tf.keras.losses.CategoricalCrossentropy()
+
+        # Layers
+        # self.input_ids = tf.keras.layers.Input(shape=(SEQ_LEN,), name='input_ids', dtype='int32')
+        # self.mask = tf.keras.layers.Input(shape=(SEQ_LEN,), name='attention_mask', dtype='int32')
+        self.global_max_pool = tf.keras.layers.GlobalMaxPool1D()
+        self.batch_norm = tf.keras.layers.BatchNormalization()
+        self.dense = tf.keras.layers.Dense(128, activation='relu')
+        self.dropout = tf.keras.layers.Dropout(0.1)
+        self.dense_sftmx = tf.keras.layers.Dense(7, activation='softmax', name='outputs')
         
     def call(self, input_ids, input_masks):
+        # input_ids = self.input_ids(input_ids)
+        # mask = self.mask(mask)
         embeddings = self.biobert(input_ids, attention_mask=input_masks)[0]
-        X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
-        # X = tf.keras.layers.BatchNormalization()(X)
-        X = tf.keras.layers.Dense(300, activation='relu')(X)
-        X = tf.keras.layers.Dropout(0.3)(X)
-        probabilities = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X)
+        X = self.global_max_pool(embeddings)  # reduce tensor dimensionality
+        X = self.batch_norm(X)
+        X = self.dense(X)
+        X = self.dropout(X)
+        probabilities = self.dense_sftmx(X)
         
         return probabilities
 
@@ -37,11 +48,6 @@ class MSNR(tf.keras.Model):
             Input: predictions 
             Output: categorical cross-entropy loss
         """
-
-        # can also use keras's categorical cross entropy
-        # print("probabilities:", probabilities)
-        # print("labels:", labels)
-        # cross_entropy = -np.sum(labels * np.log(probabilities + 1e-9)) / len(probabilities)
         
         return self.cce(labels, probabilities)
 
@@ -77,8 +83,8 @@ class BioBERT():
         # for w in self.biobert_model.weights():
         #     w._trainable= False
 
-        for w in self.biobert_model.weights:
-            w._trainable = False
+        # for w in self.biobert_model.weights:
+        #     w._trainable = False
             
         self.impressions = impressions
         self.labels = labels
@@ -121,7 +127,7 @@ class BioBERT():
         encoded_labels = encoded_labels[shuffled_indices]
         encoded_labels = tf.convert_to_tensor(encoded_labels)
         train_size = int(len(self.impressions) * 0.8)
-        print("train size")
+        print("train size", train_size)
 
         train_ids = ids[:train_size]
         train_mask = masks[:train_size]
@@ -156,7 +162,7 @@ def train(model, train_ids, train_masks, train_labels):
             curr_loss = model.loss_function(probabilities, batch_y)
         gradients = tape.gradient(curr_loss, model.trainable_variables)
         # print("train vars:", model.trainable_variables)
-        model.optimizer.apply_gradients(zip((grad, var) for (grad, var) in zip(gradients, model.trainable_variables) if grad is not None))
+        model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
 def test(model, test_ids, test_masks, test_labels):
     """
@@ -197,7 +203,9 @@ def main():
     biobert = BioBERT(file_name, impressions, labels)
     train_data, test_data = biobert.tokenize_and_split_data()
     model = MSNR(impressions, labels, biobert)
+    model.layers[0].trainable = False
 
+    print(model.layers)
     for i in range(model.epochs):
         train(model, train_data[0], train_data[1], train_data[2])
         print("epoch:", i)
