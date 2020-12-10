@@ -239,17 +239,3 @@ def get_data():
 
 
     return (impressions, labels)
-
-def write_file():
-    impressions, labels = clean_dictionary_entries()
-    with open('impressions.txt','w') as file:
-        for impression in impressions:
-            file.write(impression)
-            file.write('\n')
-    
-    with open('labels.txt','w') as file:
-        for label in labels:
-            file.write(str(label))
-            file.write('\n')
-
-write_file()
