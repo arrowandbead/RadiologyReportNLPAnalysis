@@ -26,7 +26,7 @@ class MSNR():
         self.mask = tf.keras.layers.Input(shape=(SEQ_LEN,), name='attention_mask', dtype='int32')
 
         # Model variables
-        self.optimizer = tf.keras.optimizers.Adam(0.0001)
+        self.optimizer = tf.keras.optimizers.Adam(0.1)
         self.loss = tf.keras.losses.CategoricalCrossentropy()
         self.accuracy = tf.keras.metrics.CategoricalAccuracy('accuracy')
 
@@ -38,18 +38,18 @@ class MSNR():
         #         newImpressions.append(self.impressions[i])
         #         newLabels.append(self.labels[i])
 
-        # self.impressions = newImpressions
-        # self.labels = newLabels
+        # self.mimpressions = newImpressions
+        # self.mlabels = newLabels
 
-        # tog = list(zip(self.impressions, self.labels))
+        # tog = list(zip(self.mimpressions, self.mlabels))
         # random.shuffle(tog)
-        # self.impressions, self.labels = zip(*tog)
+        # self.mimpressions, self.mlabels = zip(*tog)
 
-        # self.endImp = self.impressions[-160:]
-        # self.impressions = self.impressions[:-160]
+        # self.mendImp = self.mimpressions[-160:]
+        # self.mimpressions = self.mimpressions[:-160]
 
-        # self.endLab = self.labels[-160:]
-        # self.labels = self.labels[:-160]
+        # self.mendLab = self.labels[-160:]
+        # self.mlabels = self.mlabels[:-160]
         
     class AccuracyCallback(tf.keras.callbacks.Callback):
         def __init__(self, x, y, model):
@@ -65,8 +65,8 @@ class MSNR():
 
         def on_epoch_end(self, epoch, logs={}):
             y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
-            report = classification_report(self.y_true, y_predicted, labels=[0, 1, 2, 3, 4, 5, 6], output_dict=True)
-            self.reports.append(report)
+            # report = classification_report(self.y_true, y_predicted, labels=[0, 1, 2, 3, 4, 5, 6], output_dict=True)
+            # self.reports.append(report)
             correct_examples = np.zeros(7)
             total_examples = np.zeros(7)
             accuracies = np.zeros(7)
@@ -124,7 +124,7 @@ class MSNR():
         dataset = dataset.map(self.prep_for_biobert) 
 
         # shuffle and batch dataset
-        dataset = dataset.shuffle(len(self.impressions)).batch(8) # this buffer size should perfectly shuffle
+        dataset = dataset.shuffle(len(self.impressions)).batch(32) # this buffer size should perfectly shuffle
 
         # create train and test sets
         train_data = dataset.take(round(len(dataset) * 0.8))
@@ -173,18 +173,18 @@ class MSNR():
             Output: None
         """
         embeddings, train_data, test_data = self.get_biobert_embeddings()
-        # X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
-        # X = tf.keras.layers.BatchNormalization()(X)
-        # X = tf.keras.layers.Dense(128, activation='relu')(X)
-        # X = tf.keras.layers.Dropout(0.1)(X)
-        # y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X) 
-       
-        X = tf.keras.layers.GlobalAveragePooling1D()(embeddings)  # reduce tensor dimensionality
+        X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
         X = tf.keras.layers.BatchNormalization()(X)
-        X = tf.keras.layers.Dense(768)(X)
-        X=  tf.keras.layers.ThresholdedReLU(theta=0.1)(X)
-        X = tf.keras.layers.Dropout(0.75)(X)
-        y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X)
+        X = tf.keras.layers.Dense(128, activation='relu')(X)
+        X = tf.keras.layers.Dropout(0.1)(X)
+        y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X) 
+       
+        # X = tf.keras.layers.GlobalAveragePooling1D()(embeddings)  # reduce tensor dimensionality
+        # X = tf.keras.layers.BatchNormalization()(X)
+        # X = tf.keras.layers.Dense(768)(X)
+        # X=  tf.keras.layers.ThresholdedReLU(theta=0.1)(X)
+        # X = tf.keras.layers.Dropout(0.75)(X)
+        # y = tf.keras.layers.Dense(7, activation='softmax', name='outputs')(X)
         
         model = tf.keras.Model(inputs=[self.input_ids, self.mask], outputs=y)
 
@@ -198,7 +198,9 @@ class MSNR():
 
         # and train it
         print("-" * 15, "TRAIN RESULTS", "-" * 15)
-        model.fit(train_data, epochs=175, callbacks=[per_class_accuracy_train]) 
+        # model.fit(train_data, epochs=175, callbacks=[per_class_accuracy_train])
+        model.fit(train_data, epochs=20, callbacks=[per_class_accuracy_train]) 
+ 
         print("-" * 55)
 
         print("-" * 15, "TEST RESULTS", "-" * 15)
@@ -206,35 +208,56 @@ class MSNR():
         print(results)
         print("-" * 55)
 
+        test_ids_and_mask = test_data.map(self.get_input_ids_and_mask)
+        test_labels = test_data.map(self.get_labels)
+
         # get per class accuracy
         per_class_accuracy_test = MSNR.AccuracyCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
         per_class_accuracy_test.on_epoch_end(0)
 
-        correct= 0
-        total = len(self.endImp)
-        labelMap = {}
-        for i in range(1,7):
-            labelMap[i] = [0.0,0.0]
+        # check
+        for batch_of_labels in test_labels:
+                batch_labels_as_array = tf.make_ndarray(tf.make_tensor_proto(batch_of_labels))
+                self.y_true = np.append(self.y_true, np.argmax(batch_labels_as_array, axis=1))
 
-        for i in range(len(self.endImp)):
+        y_predicted = np.argmax(np.asarray(self.model.predict(test_ids_and_mask)), axis=1)
+        correct_examples = np.zeros(7)
+        total_examples = np.zeros(7)
+        accuracies = np.zeros(7)
+        overall_epoch_accuracy = np.mean(np.where(self.y_true == y_predicted, 1, 0))
 
+        for i in range(len(self.y_true)):
+            total_examples[int(self.y_true[i])] += 1
+            correct_examples[int(self.y_true[i])] += 1 if int(self.y_true[i]) == int(y_predicted[i]) else 0 
+            
+        for i in range(7):
+            accuracies[i] = correct_examples[i] / total_examples[i] if total_examples[i] != 0 else 0.0
+            # print("\n")
 
-            prediction = self.predict_impression(self.endImp[i])
+        # correct = 0
+        # total = 7
+        # labelMap = {}
+        # for i in range(1,7):
+        #     labelMap[i] = [0.0,0.0]
 
-            if tf.math.argmax(prediction[0]).numpy() + 1 == self.endLab[i]:
-                correct += 1
-                labelMap[self.endLab[i]][0] += 1
-            labelMap[self.endLab[i]][1] += 1
-        print('\n')
-        print(correct/total)
-        print('\n')
-        for thing in labelMap:
-            if labelMap[thing][1] != 0:
-                print(str(thing) + " : " + str(labelMap[thing][0]/labelMap[thing][1]))
-            else:
-                print(str(thing) + " : " + "N/A")
-            print(labelMap[thing][1])
-            print(" ")
+        # for i in range(len(self.endImp)):
+
+        #     # prediction = self.predict_impression(self.endImp[i])
+
+        #     if tf.math.argmax(prediction[0]).numpy() + 1 == self.endLab[i]:
+        #         correct += 1
+        #         labelMap[self.endLab[i]][0] += 1
+        #     labelMap[self.endLab[i]][1] += 1
+        # print('\n')
+        # print(correct/total)
+        # print('\n')
+        # for thing in labelMap:
+        #     if labelMap[thing][1] != 0:
+        #         print(str(thing) + " : " + str(labelMap[thing][0]/labelMap[thing][1]))
+        #     else:
+        #         print(str(thing) + " : " + "N/A")
+        #     print(labelMap[thing][1])
+        #     print(" ")
 
 def main():
 
