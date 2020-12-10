@@ -79,7 +79,7 @@ class MSNR():
             #     for example_label in y:
             #         true_label.append(int(example_label))
                 
-            y_predicted = np.argmax(np.asarray(MSNR.model.predict(self.x)), axis=1)
+            y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
             print("y predicted:", y_predicted)
             # report = classification_report(self.y_true, y_predicted, labels=[0, 1, 2, 3, 4, 5, 6], output_dict=True)
             # self.reports.append(report)
