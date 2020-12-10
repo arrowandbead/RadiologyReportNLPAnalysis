@@ -43,7 +43,8 @@ class MSNR(tf.keras.Model):
         """
 
         # can also use keras's categorical cross entropy
-
+        print("probabilities:", probabilities)
+        print("labels:", labels)
         log_vals = [np.log(probabilities) if probability != 0 else 0 for probability in probabilities]
         cross_entropy = -np.sum(labels * log_vals) / len(probabilities)
         return cross_entropy
