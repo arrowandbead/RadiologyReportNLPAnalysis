@@ -18,8 +18,8 @@ class MSNR(tf.keras.Model):
         # Hyperparameters
         self.optimizer = tf.keras.optimizers.Adam(0.01)
         self.loss = tf.keras.losses.CategoricalCrossentropy()
-        self.batch_size = 32
-        self.epochs = 20
+        self.batch_size = 20
+        self.epochs = 100
         self.cce = tf.keras.losses.CategoricalCrossentropy()
         
     def call(self, input_ids, input_masks):
@@ -51,12 +51,26 @@ class MSNR(tf.keras.Model):
         return self.cce(labels, probabilities)
 
     def accuracy_function(self, predictions, labels):
-        pass
+        encoded_predictions = np.argmax(predictions, axis=1)
+        correct_overall = 0
+        correct_per_class = np.zeros(7)
+        total_per_class = np.zeros(7)
+        for i in range(len(encoded_predictions)):
+            label = np.argmax(labels[i])
+            if np.argmax(encoded_predictions[i]) == label:
+                correct_overall += 1
+                correct_per_class[label] += 1
+            total_per_class[label] += 1    
+        return correct_overall, correct_per_class, total_per_class
 
 class BioBERT():
     def __init__(self, file_name, impressions, labels):
         self.biobert_tokenizer = AutoTokenizer.from_pretrained(file_name)
         self.biobert_model = TFAutoModel.from_pretrained(file_name)
+
+        for param in self.biobert_model.parameters():
+            param.requires_grad = False
+            
         self.impressions = impressions
         self.labels = labels
         
@@ -96,6 +110,7 @@ class BioBERT():
         encoded_labels = encoded_labels[shuffled_indices]
 
         train_size = int(len(self.impressions) * 0.8)
+        print("train size")
 
         train_ids = ids[:train_size]
         train_mask = masks[:train_size]
@@ -152,7 +167,9 @@ def test(model, test_ids, test_masks, test_labels):
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
     # calculate accuracy instead of loss
-    accuracy = 0
+    correct_overall = 0
+    correct_per_class = np.zeros(7)
+    total_per_class = np.zeros(7)
     
     # calculate perplexity
     for i in range(0, len(test_ids), model.batch_size):
@@ -160,10 +177,15 @@ def test(model, test_ids, test_masks, test_labels):
         batch_masks = test_masks[i:i + model.batch_size]
         batch_y = test_labels[i:i + model.batch_size]
         probs = model.call(batch_ids, batch_masks)
-        weight = float(len(test_ids)) / len(test_ids)
+        # weight = float(len(test_ids)) / len(test_ids)
         # avg_loss += weight * model.loss(probs, batch_y)
-    # return np.exp(avg_loss)
-    return accuracy
+        correct_overall_temp, correct_per_class_temp, total_per_class_temp = model.accuracy_function(probs, batch_y)
+        correct_overall += correct_overall_temp
+        correct_per_class += correct_per_class_temp
+        total_per_class += total_per_class_temp
+    total_accuracy = correct_overall / len(test_ids)
+    accuracy_per_class = [correct_per_class[i] / total_per_class[i] if total_per_class[i] != 0 else 0 for i in range(7)]
+    return total_accuracy, accuracy_per_class, total_per_class
 
 
 def main():
@@ -173,8 +195,10 @@ def main():
     biobert = BioBERT(file_name, impressions, labels)
     train_data, test_data = biobert.tokenize_and_split_data()
     model = MSNR(impressions, labels, biobert)
-    train(model, train_data[0], train_data[1], train_data[2])
-    print(test(model, test_data[0], test_data[1], test_data[2]))
+
+    for _ in range(model.epochs):
+        train(model, train_data[0], train_data[1], train_data[2])
+    print("acc, acc/class, example/class", test(model, test_data[0], test_data[1], test_data[2]))
 
 if __name__ == '__main__':
     main()
