@@ -16,7 +16,7 @@ class MSNR(tf.keras.Model):
         self.biobert = biobert.biobert_model
 
         # Hyperparameters
-        self.optimizer = tf.keras.optimizers.Adam(0.01)
+        self.optimizer = tf.keras.optimizers.Adam(0.001)
         self.loss = tf.keras.losses.CategoricalCrossentropy()
         self.batch_size = 32
         self.epochs = 20
@@ -30,6 +30,7 @@ class MSNR(tf.keras.Model):
         self.dense = tf.keras.layers.Dense(128, activation='relu')
         self.dropout = tf.keras.layers.Dropout(0.1)
         self.dense_sftmx = tf.keras.layers.Dense(7, activation='softmax', name='outputs')
+        self.cat_acc = tf.keras.metrics.CategoricalAccuracy()
         
     def call(self, input_ids, input_masks):
         # input_ids = self.input_ids(input_ids)
@@ -52,16 +53,20 @@ class MSNR(tf.keras.Model):
         return self.cce(labels, probabilities)
 
     def accuracy_function(self, predictions, labels):
+        print("predictions", predictions)
+        print("labels", labels)
         encoded_predictions = np.argmax(predictions, axis=1)
+        print("encoded_predictions", encoded_predictions)
+        encoded_labels = np.argmax(labels, axis=1)
+        print("encoded_labels", encoded_labels)
         correct_overall = 0
         correct_per_class = np.zeros(7)
         total_per_class = np.zeros(7)
         for i in range(len(encoded_predictions)):
-            label = np.argmax(labels[i])
-            if np.argmax(encoded_predictions[i]) == label:
+            if encoded_predictions[i] == encoded_labels[i]:
                 correct_overall += 1
-                correct_per_class[label] += 1
-            total_per_class[label] += 1    
+                correct_per_class[encoded_labels[i]] += 1
+            total_per_class[encoded_labels[i]] += 1    
         return correct_overall, correct_per_class, total_per_class
 
 class BioBERT():
@@ -160,6 +165,8 @@ def train(model, train_ids, train_masks, train_labels):
         with tf.GradientTape() as tape:
             probabilities = model.call(batch_ids, batch_masks)
             curr_loss = model.loss_function(probabilities, batch_y)
+            model.cat_acc.update_state(batch_y, probabilities)
+            # print("curr cat acc:", model.cat_acc)
         gradients = tape.gradient(curr_loss, model.trainable_variables)
         # print("train vars:", model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -185,9 +192,11 @@ def test(model, test_ids, test_masks, test_labels):
         batch_masks = test_masks[i:i + model.batch_size]
         batch_y = test_labels[i:i + model.batch_size]
         probs = model.call(batch_ids, batch_masks)
+        model.cat_acc.update_state(batch_y, probs)
         # weight = float(len(test_ids)) / len(test_ids)
         # avg_loss += weight * model.loss(probs, batch_y)
         correct_overall_temp, correct_per_class_temp, total_per_class_temp = model.accuracy_function(probs, batch_y)
+
         correct_overall += correct_overall_temp
         correct_per_class += correct_per_class_temp
         total_per_class += total_per_class_temp
@@ -210,6 +219,7 @@ def main():
         train(model, train_data[0], train_data[1], train_data[2])
         print("epoch:", i)
     print("acc, acc/class, example/class", test(model, test_data[0], test_data[1], test_data[2]))
+    print("cat acc", model.cat_acc.result().numpy())
     
 if __name__ == '__main__':
     main()
