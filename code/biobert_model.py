@@ -13,7 +13,6 @@ class MSNR():
 
         # Initialize model and tokenizer
         file_name = "giacomomiolo/biobert_reupload"
-        bert_name = "bert-base-cased"
         self.biobert_tokenizer = AutoTokenizer.from_pretrained(file_name)
         self.biobert = TFAutoModel.from_pretrained(file_name)
 
@@ -26,7 +25,7 @@ class MSNR():
         self.mask = tf.keras.layers.Input(shape=(SEQ_LEN,), name='attention_mask', dtype='int32')
 
         # Model variables
-        self.optimizer = tf.keras.optimizers.Adam(0.1)
+        self.optimizer = tf.keras.optimizers.Adam(0.01)
         self.loss = tf.keras.losses.CategoricalCrossentropy()
         self.accuracy = tf.keras.metrics.CategoricalAccuracy('accuracy')
 
