@@ -57,10 +57,14 @@ class MSNR():
             self.model = model
 
             # decode one-hot labels in each batch
-            for batch_of_labels in y:
-                batch_labels_as_array = tf.make_ndarray(tf.make_tensor_proto(batch_of_labels))
-                self.y_true = np.append(self.y_true, np.argmax(batch_labels_as_array, axis=1))
-            self.reports = []
+            for batch in y:
+                print("Y batch:", batch)
+                batch_labels_as_array = tf.make_ndarray(tf.make_tensor_proto(batch))
+                self.y_true = np.append(self.y_true, np.argmax(batch, axis=1))
+            
+            for batch in x:
+                print("X batch:", batch)
+            # self.reports = []
 
         def on_epoch_end(self, epoch, logs={}):
             y_predicted = np.argmax(np.asarray(self.model.predict(self.x)), axis=1)
@@ -214,20 +218,22 @@ class MSNR():
         per_class_accuracy_test = MSNR.AccuracyCallback(test_data.map(self.get_input_ids_and_mask), test_data.map(self.get_labels), model)
         per_class_accuracy_test.on_epoch_end(0)
 
+        y_true = np.array([])
+
         # check
         for batch_of_labels in test_labels:
                 batch_labels_as_array = tf.make_ndarray(tf.make_tensor_proto(batch_of_labels))
-                self.y_true = np.append(self.y_true, np.argmax(batch_labels_as_array, axis=1))
+                y_true = np.append(y_true, np.argmax(batch_labels_as_array, axis=1))
 
         y_predicted = np.argmax(np.asarray(self.model.predict(test_ids_and_mask)), axis=1)
         correct_examples = np.zeros(7)
         total_examples = np.zeros(7)
         accuracies = np.zeros(7)
-        overall_epoch_accuracy = np.mean(np.where(self.y_true == y_predicted, 1, 0))
+        overall_epoch_accuracy = np.mean(np.where(y_true == y_predicted, 1, 0))
 
-        for i in range(len(self.y_true)):
-            total_examples[int(self.y_true[i])] += 1
-            correct_examples[int(self.y_true[i])] += 1 if int(self.y_true[i]) == int(y_predicted[i]) else 0 
+        for i in range(len(y_true)):
+            total_examples[int(y_true[i])] += 1
+            correct_examples[int(y_true[i])] += 1 if int(y_true[i]) == int(y_predicted[i]) else 0 
             
         for i in range(7):
             accuracies[i] = correct_examples[i] / total_examples[i] if total_examples[i] != 0 else 0.0
