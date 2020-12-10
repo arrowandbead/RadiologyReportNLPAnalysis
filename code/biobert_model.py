@@ -60,7 +60,9 @@ class MSNR():
             for batch in y:
                 print("Y batch:", batch)
                 batch_labels_as_array = tf.make_ndarray(tf.make_tensor_proto(batch))
-                self.y_true = np.append(self.y_true, np.argmax(batch_labels_as_array, axis=1))
+                encoding = np.argmax(batch_labels_as_array, axis=1)
+                print("encoding of batch:", encoding)
+                self.y_true = np.append(self.y_true, encoding)
             
             # for batch in x:
             #     print("X batch:", batch)
