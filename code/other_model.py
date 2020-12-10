@@ -20,7 +20,7 @@ class MSNR(tf.keras.Model):
         self.loss = tf.keras.losses.CategoricalCrossentropy()
         self.batch_size = 32
         self.epochs = 20
-        self.cce = tf.keras.CategoricalCrossentropy()
+        self.cce = tf.keras.losses.CategoricalCrossentropy()
         
     def call(self, input_ids, input_masks):
         # print("input ids:", input_ids)
