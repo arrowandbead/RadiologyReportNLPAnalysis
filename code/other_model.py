@@ -22,6 +22,7 @@ class MSNR(tf.keras.Model):
         self.epochs = 20
         
     def call(self, input_ids, input_masks):
+        print("input ids:", input_ids)
         embeddings = self.biobert(input_ids, attention_mask=input_masks)[0]
         X = tf.keras.layers.GlobalMaxPool1D()(embeddings)  # reduce tensor dimensionality
         X = tf.keras.layers.BatchNormalization()(X)
