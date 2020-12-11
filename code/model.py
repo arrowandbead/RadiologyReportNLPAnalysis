@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np
 import random
 from preprocessing import get_data
+import matplotlib.pyplot as plt
 
 SEQ_LEN = 128
 SPLIT = 0.8
@@ -16,7 +17,7 @@ class MSNR(tf.keras.Model):
         self.biobert = biobert.biobert_model
 
         # Hyperparameters
-        self.optimizer = tf.keras.optimizers.Adam(0.001) # learning rate scheduler
+        self.optimizer = tf.keras.optimizers.Adam(0.001) 
         self.loss = tf.keras.losses.CategoricalCrossentropy()
         self.batch_size = 32
         self.epochs = 20
@@ -24,9 +25,9 @@ class MSNR(tf.keras.Model):
 
         # Layers
         self.global_average_pool = tf.keras.layers.GlobalAveragePooling1D()
-        self.batch_norm = tf.keras.layers.BatchNormalization()
-        self.dense = tf.keras.layers.Dense(128, activation='relu')
-        self.dropout = tf.keras.layers.Dropout(0.1)
+        # self.batch_norm = tf.keras.layers.BatchNormalization()
+        # self.dense = tf.keras.layers.Dense(128, activation='relu')
+        # self.dropout = tf.keras.layers.Dropout(0.1)
         self.dense_sftmx = tf.keras.layers.Dense(7, activation='softmax', name='outputs')
         self.cat_acc = tf.keras.metrics.CategoricalAccuracy()
         
@@ -37,9 +38,9 @@ class MSNR(tf.keras.Model):
         """
         embeddings = self.biobert(input_ids, attention_mask=input_masks)[0]
         X = self.global_average_pool(embeddings)  
-        X = self.batch_norm(X)
-        X = self.dense(X)
-        X = self.dropout(X)
+        # X = self.batch_norm(X)
+        # X = self.dense(X)
+        # X = self.dropout(X)
         probabilities = self.dense_sftmx(X)
         return probabilities
 
@@ -135,7 +136,7 @@ class BioBERT():
         return train_data, test_data
 
 
-def train(model, train_ids, train_masks, train_labels):
+def train(model, train_ids, train_masks, train_labels, epoch_accuracy, per_class_epoch_accuracy):
     """
     Runs through one epoch - all training examples.
 
@@ -145,6 +146,8 @@ def train(model, train_ids, train_masks, train_labels):
     :return: None
     """
     # train in batches
+    accuracy = 0
+    accuracy_per_class = np.zeros(7)
     for i in range(0, len(train_ids), model.batch_size):
         batch_ids = train_ids[i:i + model.batch_size]
         batch_masks = train_masks[i:i + model.batch_size]
@@ -153,9 +156,15 @@ def train(model, train_ids, train_masks, train_labels):
             probabilities = model.call(batch_ids, batch_masks)
             curr_loss = model.loss_function(probabilities, batch_y)
             model.cat_acc.update_state(batch_y, probabilities)
-            print("train accuracy:", model.cat_acc.result().numpy())
+            weight = float(len(batch_y)) / len(train_ids)
+            accuracy += weight * model.cat_acc.result().numpy()
+            correct_overall, correct_per_class, examples_per_class = model.accuracy_function(probabilities, batch_y)
+            accuracy_per_class += [weight * correct_per_class[i] / examples_per_class[i] if examples_per_class[i] != 0 else 0 for i in range(7)]
+            # print("train accuracy:", model.cat_acc.result().numpy())
         gradients = tape.gradient(curr_loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    per_class_epoch_accuracy.append(accuracy_per_class)
+    epoch_accuracy.append(accuracy)
 
 def test(model, test_ids, test_masks, test_labels):
     """
@@ -186,7 +195,6 @@ def test(model, test_ids, test_masks, test_labels):
     accuracy_per_class = [correct_per_class[i] / examples_per_class[i] if examples_per_class[i] != 0 else 0 for i in range(7)]
     return accuracy, accuracy_per_class, examples_per_class
 
-
 def main():
 
     # load BioBERT from Hugging Face
@@ -198,17 +206,21 @@ def main():
     train_data, test_data = biobert.tokenize_and_split_data()
     model = MSNR(impressions, labels, biobert)
     model.layers[0].trainable = False # freeze BioBERT layer to only train our classifier
+    epoch_accuracy = []
+    per_class_epoch_accuracy = []
 
     for i in range(model.epochs):
-        train(model, train_data[0], train_data[1], train_data[2])
-        print("epoch:", i, "/ 20")
-    train_acc = model.cat_acc.result().numpy()
-    print("Keras Categorical Accuracy (train)", train_acc)
+        train(model, train_data[0], train_data[1], train_data[2], epoch_accuracy, per_class_epoch_accuracy)
+        print("epoch:", i, "/ 19")
+
+    # print accuracies
+    train_accuracy = model.cat_acc.result().numpy()
+    print("Keras Categorical Accuracy (train)", train_accuracy)
     results = test(model, test_data[0], test_data[1], test_data[2])
-    print("accuracy_function():", results[0])
-    print("per class accuracy_function():", results[1])
+    print("per class accuracy:", results[1])
     print("# of examples per class:", results[2])
-    print("Keras Categorical Accuracy (test)", model.cat_acc.result().numpy())
+    test_accuracy = model.cat_acc.result().numpy()
+    print("Keras Categorical Accuracy (test)", test_accuracy)
     
 if __name__ == '__main__':
     main()
