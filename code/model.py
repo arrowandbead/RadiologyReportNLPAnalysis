@@ -23,7 +23,7 @@ class MSNR(tf.keras.Model):
         self.cce = tf.keras.losses.CategoricalCrossentropy()
 
         # Layers
-        self.global_max_pool = tf.keras.layers.GlobalAveragePooling1D()
+        self.global_average_pool = tf.keras.layers.GlobalAveragePooling1D()
         self.batch_norm = tf.keras.layers.BatchNormalization()
         self.dense = tf.keras.layers.Dense(128, activation='relu')
         self.dropout = tf.keras.layers.Dropout(0.1)
@@ -36,7 +36,7 @@ class MSNR(tf.keras.Model):
             Output: probabilities for each class for each example in this batch
         """
         embeddings = self.biobert(input_ids, attention_mask=input_masks)[0]
-        X = self.global_max_pool(embeddings)  
+        X = self.global_average_pool(embeddings)  
         X = self.batch_norm(X)
         X = self.dense(X)
         X = self.dropout(X)
@@ -153,6 +153,7 @@ def train(model, train_ids, train_masks, train_labels):
             probabilities = model.call(batch_ids, batch_masks)
             curr_loss = model.loss_function(probabilities, batch_y)
             model.cat_acc.update_state(batch_y, probabilities)
+            print("train accuracy:", model.cat_acc.result().numpy())
         gradients = tape.gradient(curr_loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
@@ -176,10 +177,9 @@ def test(model, test_ids, test_masks, test_labels):
         batch_masks = test_masks[i:i + model.batch_size]
         batch_y = test_labels[i:i + model.batch_size]
         probs = model.call(batch_ids, batch_masks)
-
-        model.cat_acc.update_state(batch_y, probs) # Keras categorical accuracy
         weight = float(len(batch_ids)) / len(test_ids)
         batch_correct_overall, batch_correct_per_class, batch_examples_per_class = model.accuracy_function(probs, batch_y)
+        model.cat_acc.update_state(batch_y, probs) # Keras Categorical Accuracy
         accuracy += weight * batch_correct_overall / len(batch_y)
         correct_per_class += batch_correct_per_class
         examples_per_class += batch_examples_per_class
@@ -202,11 +202,13 @@ def main():
     for i in range(model.epochs):
         train(model, train_data[0], train_data[1], train_data[2])
         print("epoch:", i, "/ 20")
+    train_acc = model.cat_acc.result().numpy()
+    print("Keras Categorical Accuracy (train)", train_acc)
     results = test(model, test_data[0], test_data[1], test_data[2])
     print("accuracy_function():", results[0])
     print("per class accuracy_function():", results[1])
     print("# of examples per class:", results[2])
-    print("Keras Categorical Accuracy", model.cat_acc.result().numpy())
+    print("Keras Categorical Accuracy (test)", model.cat_acc.result().numpy())
     
 if __name__ == '__main__':
     main()
