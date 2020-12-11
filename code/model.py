@@ -25,9 +25,9 @@ class MSNR(tf.keras.Model):
 
         # Layers
         self.global_average_pool = tf.keras.layers.GlobalAveragePooling1D()
-        # self.batch_norm = tf.keras.layers.BatchNormalization()
-        # self.dense = tf.keras.layers.Dense(128, activation='relu')
-        # self.dropout = tf.keras.layers.Dropout(0.1)
+        self.batch_norm = tf.keras.layers.BatchNormalization()
+        self.dense = tf.keras.layers.Dense(128, activation='relu')
+        self.dropout = tf.keras.layers.Dropout(0.1)
         self.dense_sftmx = tf.keras.layers.Dense(7, activation='softmax', name='outputs')
         self.cat_acc = tf.keras.metrics.CategoricalAccuracy()
         
@@ -38,9 +38,9 @@ class MSNR(tf.keras.Model):
         """
         embeddings = self.biobert(input_ids, attention_mask=input_masks)[0]
         X = self.global_average_pool(embeddings)  
-        # X = self.batch_norm(X)
-        # X = self.dense(X)
-        # X = self.dropout(X)
+        X = self.batch_norm(X)
+        X = self.dense(X)
+        X = self.dropout(X)
         probabilities = self.dense_sftmx(X)
         return probabilities
 
@@ -136,7 +136,7 @@ class BioBERT():
         return train_data, test_data
 
 
-def train(model, train_ids, train_masks, train_labels, epoch_accuracy, per_class_epoch_accuracy):
+def train(model, train_ids, train_masks, train_labels):
     """
     Runs through one epoch - all training examples.
 
@@ -146,8 +146,6 @@ def train(model, train_ids, train_masks, train_labels, epoch_accuracy, per_class
     :return: None
     """
     # train in batches
-    accuracy = 0
-    accuracy_per_class = np.zeros(7)
     for i in range(0, len(train_ids), model.batch_size):
         batch_ids = train_ids[i:i + model.batch_size]
         batch_masks = train_masks[i:i + model.batch_size]
@@ -156,15 +154,8 @@ def train(model, train_ids, train_masks, train_labels, epoch_accuracy, per_class
             probabilities = model.call(batch_ids, batch_masks)
             curr_loss = model.loss_function(probabilities, batch_y)
             model.cat_acc.update_state(batch_y, probabilities)
-            weight = float(len(batch_y)) / len(train_ids)
-            accuracy += weight * model.cat_acc.result().numpy()
-            correct_overall, correct_per_class, examples_per_class = model.accuracy_function(probabilities, batch_y)
-            accuracy_per_class += [weight * correct_per_class[i] / examples_per_class[i] if examples_per_class[i] != 0 else 0 for i in range(7)]
-            # print("train accuracy:", model.cat_acc.result().numpy())
         gradients = tape.gradient(curr_loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-    per_class_epoch_accuracy.append(accuracy_per_class)
-    epoch_accuracy.append(accuracy)
 
 def test(model, test_ids, test_masks, test_labels):
     """
@@ -210,7 +201,7 @@ def main():
     per_class_epoch_accuracy = []
 
     for i in range(model.epochs):
-        train(model, train_data[0], train_data[1], train_data[2], epoch_accuracy, per_class_epoch_accuracy)
+        train(model, train_data[0], train_data[1], train_data[2])
         print("epoch:", i, "/ 19")
 
     # print accuracies
