@@ -9,3 +9,7 @@ Label 4: 48% (had 27 examples in test)
 Label 5: 35% (had 17 examples in test)
 Label 6: 0% (had 5 examples in test)
 Label 7: 0% (had 0 examples in test)
+
+Known Bugs:
+
+We manually calculated accuracy, but this value diverged from the 
